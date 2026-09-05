@@ -1,0 +1,28 @@
+# Compiled binaries & Arduino build files
+build/
+*.bin
+*.hex
+*.elf
+*.o
+*.a
+*.d
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Editors & IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.bak
+
+# Temporary / Log files
+*.log
+scratch/
+.system_generated/

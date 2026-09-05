@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mesin Tempe Otomatis</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #21262d;
+      --border:    #30363d;
+      --text:      #e6edf3;
+      --muted:     #7d8590;
+      --green:     #3fb950;
+      --green-glow:#3fb95033;
+      --yellow:    #d29922;
+      --red:       #f85149;
+      --red-glow:  #f8514933;
+      --blue:      #58a6ff;
+      --blue-glow: #58a6ff22;
+      --orange:    #e3b341;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      padding: 24px 0 20px;
+      margin-bottom: 20px;
+    }
+    .header h1 {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, #58a6ff, #3fb950);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+    }
+    .header p { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+    .ip-badge {
+      display: inline-block;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-size: 0.75rem;
+      color: var(--blue);
+      margin-top: 8px;
+    }
+
+    /* ── Grid ── */
+    .grid { display: grid; gap: 14px; max-width: 900px; margin: 0 auto; }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      transition: border-color .2s;
+    }
+    .card:hover { border-color: #484f58; }
+    .card-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    /* ── Status Card ── */
+    .status-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .status-dot {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      transition: all .4s;
+    }
+    .status-dot.idle     { background: var(--surface2); border: 2px solid var(--border); }
+    .status-dot.running  { background: var(--green-glow); border: 2px solid var(--green);
+                           box-shadow: 0 0 16px var(--green-glow); animation: pulse 1.5s infinite; }
+    .status-dot.alarm    { background: var(--red-glow); border: 2px solid var(--red);
+                           box-shadow: 0 0 16px var(--red-glow); animation: pulse .8s infinite; }
+    .status-dot.homing   { background: var(--blue-glow); border: 2px solid var(--blue); }
+    @keyframes pulse {
+      0%,100% { transform: scale(1); }
+      50%      { transform: scale(1.08); }
+    }
+    .status-info { flex: 1; }
+    .status-state { font-size: 1.2rem; font-weight: 700; }
+    .status-sub   { font-size: 0.8rem; color: var(--muted); margin-top: 3px; }
+
+    /* ── Progress Bar ── */
+    .prog-label {
+      display: flex; justify-content: space-between;
+      font-size: 0.8rem; color: var(--muted); margin-bottom: 8px;
+    }
+    .prog-val { font-weight: 600; color: var(--text); }
+    .prog-track {
+      height: 10px; border-radius: 10px;
+      background: var(--surface2);
+      overflow: hidden;
+    }
+    .prog-fill {
+      height: 100%; border-radius: 10px;
+      transition: width .4s ease;
+      background: linear-gradient(90deg, #3fb950, #58a6ff);
+    }
+    .prog-fill.warning { background: linear-gradient(90deg, #e3b341, #f85149); }
+
+    /* ── Stat Cards ── */
+    .stat-val {
+      font-size: 2.2rem; font-weight: 800;
+      color: var(--text); line-height: 1;
+    }
+    .stat-unit { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+    .stat-icon { font-size: 1.6rem; margin-bottom: 8px; }
+
+    /* ── Sensor dots ── */
+    .sensor-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .sensor-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .sensor-dot.active   { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .sensor-dot.inactive { background: var(--border); }
+    .sensor-label { font-size: 0.78rem; color: var(--muted); flex: 1; }
+    .sensor-val   { font-size: 0.78rem; font-weight: 600; }
+
+    /* ── Buttons ── */
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn {
+      flex: 1; min-width: 80px;
+      padding: 11px 16px;
+      border: none; border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; transition: all .15s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn-start  { background: var(--green); color: #0d1117; }
+    .btn-start:hover { background: #4ade80; }
+    .btn-stop   { background: var(--red); color: #fff; }
+    .btn-stop:hover { background: #ff6b6b; }
+    .btn-reset  { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-reset:hover { border-color: var(--muted); }
+    .btn-ghost  { background: var(--surface2); color: var(--muted); border: 1px solid var(--border);
+                  font-size: 0.78rem; }
+    .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+    .btn-save   { background: var(--blue); color: #0d1117; }
+    .btn-save:hover { background: #79b8ff; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+    /* ── Form inputs ── */
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; display: block; }
+    .form-input {
+      width: 100%; padding: 9px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text); font-size: 0.88rem;
+      font-family: 'Inter', sans-serif;
+      transition: border-color .15s;
+    }
+    .form-input:focus { outline: none; border-color: var(--blue); }
+    .form-hint { font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 20px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 20px;
+      font-size: 0.84rem; color: var(--text);
+      transition: transform .3s ease; z-index: 999;
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.success { border-color: var(--green); color: var(--green); }
+    #toast.error   { border-color: var(--red);   color: var(--red); }
+
+    /* ── Mode badge ── */
+    .mode-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 0.7rem; font-weight: 600; margin-left: 8px;
+    }
+    .mode-auto   { background: #1f3d1f; color: var(--green); }
+    .mode-manual { background: #3d2d1f; color: var(--orange); }
+
+    /* ── Divider ── */
+    hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+
+    /* ── Slot progress ── */
+    .slot-row { display: flex; gap: 6px; }
+    .slot-box {
+      flex: 1; height: 32px; border-radius: 6px;
+      border: 2px solid var(--border);
+      transition: all .3s; font-size: 0.65rem;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-weight: 600;
+    }
+    .slot-box.active { background: var(--green-glow); border-color: var(--green); color: var(--green); }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      body { padding: 10px; }
+      .stat-val { font-size: 1.8rem; }
+      .btn-row { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🫘 Mesin Tempe Otomatis</h1>
+  <p>6 Slot · Press Simultan · Lift-Off Frame</p>
+  <div class="ip-badge" id="ipBadge">Menghubungkan...</div>
+</div>
+
+<div class="grid" style="max-width:900px;margin:0 auto">
+
+  <!-- STATUS CARD -->
+  <div class="status-card" id="statusCard">
+    <div class="status-dot idle" id="statusDot">⏸</div>
+    <div class="status-info">
+      <div class="status-state" id="statusState">
+        Menunggu data...
+        <span class="mode-badge mode-manual" id="modeBadge">Manual</span>
+      </div>
+      <div class="status-sub" id="statusSub">Menghubungkan ke mesin...</div>
+    </div>
+  </div>
+
+  <!-- BERAT & HOPPER -->
+  <div class="grid grid-2">
+    <!-- Berat -->
+    <div class="card">
+      <div class="card-title">⚖ Berat Dosing</div>
+      <div class="prog-label">
+        <span>Saat ini</span>
+        <span class="prog-val"><span id="beratVal">—</span> / <span id="beratMax">—</span> g</span>
+      </div>
+      <div class="prog-track">
+        <div class="prog-fill" id="beratBar" style="width:0%"></div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+        <button class="btn btn-ghost" onclick="tare()" style="flex:none;padding:6px 12px">
+          ⟳ Tare
+        </button>
+        <span style="font-size:0.72rem;color:var(--muted)">Nol-kan timbangan</span>
+      </div>
+    </div>
+
+    <!-- Hopper Level -->
+    <div class="card">
+      <div class="card-title">🪣 Level Hopper</div>
+      <div class="prog-label">
+        <span>Jarak sensor ke kedelai</span>
+        <span class="prog-val" id="hopperVal">— cm</span>
+      </div>
+      <div class="prog-track">
+        <div class="prog-fill warning" id="hopperBar" style="width:0%"></div>
+      </div>
+      <div style="margin-top:10px;font-size:0.75rem;color:var(--muted)">
+        ⬇ Kecil = kedelai banyak &nbsp;|&nbsp; Besar = hampir habis
+      </div>
+    </div>
+  </div>
+
+  <!-- COUNTER & SENSOR -->
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="stat-icon">📦</div>
+      <div class="card-title">Tempe Hari Ini</div>
+      <div class="stat-val" id="counterHari">—</div>
+      <div class="stat-unit">tempe (sejak reset)</div>
+    </div>
+    <div class="card">
+      <div class="stat-icon">🏭</div>
+      <div class="card-title">Total Produksi</div>
+      <div class="stat-val" id="counterTotal">—</div>
+      <div class="stat-unit">tempe (semua waktu)</div>
+    </div>
+    <div class="card">
+      <div class="stat-icon">🔩</div>
+      <div class="card-title">Status Sensor</div>
+      <div class="sensor-row">
+        <div class="sensor-dot" id="dotLimitAtas"></div>
+        <span class="sensor-label">Limit Atas</span>
+        <span class="sensor-val" id="valLimitAtas">—</span>
+      </div>
+      <div class="sensor-row">
+        <div class="sensor-dot" id="dotLimitBawah"></div>
+        <span class="sensor-label">Limit Bawah</span>
+        <span class="sensor-val" id="valLimitBawah">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLOT PROGRESS -->
+  <div class="card">
+    <div class="card-title">🎯 Slot Cetakan (6 slot per siklus)</div>
+    <div class="slot-row" id="slotRow">
+      <div class="slot-box" id="slot1">1</div>
+      <div class="slot-box" id="slot2">2</div>
+      <div class="slot-box" id="slot3">3</div>
+      <div class="slot-box" id="slot4">4</div>
+      <div class="slot-box" id="slot5">5</div>
+      <div class="slot-box" id="slot6">6</div>
+    </div>
+    <div style="margin-top:8px;font-size:0.72rem;color:var(--muted)">
+      Semua 6 slot diproses bersamaan dalam satu siklus press
+    </div>
+  </div>
+
+  <!-- KONTROL -->
+  <div class="card">
+    <div class="card-title">🕹 Kontrol Mesin</div>
+    <div class="btn-row">
+      <button class="btn btn-start" id="btnStart" onclick="sendCmd('START')">▶ START</button>
+      <button class="btn btn-stop"  id="btnStop"  onclick="sendCmd('STOP')">⏹ STOP</button>
+      <button class="btn btn-reset" onclick="sendCmd('RESET_HARI')">↺ Reset Hari</button>
+    </div>
+    <hr>
+    <div style="font-size:0.72rem;color:var(--muted);line-height:1.6">
+      <b>START</b> — mulai siklus baru &nbsp;|&nbsp;
+      <b>STOP</b> — hentikan & homing &nbsp;|&nbsp;
+      <b>Reset Hari</b> — nol-kan counter harian
+    </div>
+  </div>
+
+  <!-- KONFIGURASI -->
+  <div class="card">
+    <div class="card-title">⚙ Konfigurasi Parameter</div>
+    <div class="grid grid-2" style="gap:12px">
+      <div>
+        <div class="form-group">
+          <label class="form-label">Berat Target Total (gram)</label>
+          <input type="number" class="form-input" id="cfgBerat"
+                 placeholder="0 = mode manual" min="0" max="9999">
+          <div class="form-hint">0 = isi manual (berat belum diukur)</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Waktu Tahan Press (detik)</label>
+          <input type="number" class="form-input" id="cfgWaktu"
+                 placeholder="5" min="1" max="30">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Alarm Hopper (cm dari sensor)</label>
+          <input type="number" class="form-input" id="cfgAlarm"
+                 placeholder="8" min="1" max="30" step="0.5">
+          <div class="form-hint">Jarak sensor → kedelai. Makin besar = makin cepat alarm</div>
+        </div>
+        <button class="btn btn-save" onclick="saveConfig()" style="width:100%">
+          💾 Simpan Konfigurasi
+        </button>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px;font-size:0.76rem;color:var(--muted);line-height:1.8">
+        <div style="font-weight:600;color:var(--text);margin-bottom:8px">📌 Panduan Singkat</div>
+        <div><b style="color:var(--green)">Mode Otomatis</b><br>
+          Set berat target → mesin isi sendiri sampai target tercapai</div>
+        <br>
+        <div><b style="color:var(--orange)">Mode Manual</b><br>
+          Set berat = 0 → operator isi kedelai sendiri → tekan START untuk press</div>
+        <br>
+        <div><b style="color:var(--blue)">Kalibrasi</b><br>
+          Jika berat tidak akurat → kosongkan platform → klik tombol Tare</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end grid -->
+
+<!-- Toast Notification -->
+<div id="toast"></div>
+
+<script>
+  // ── Konfigurasi ─────────────────────────────────────
+  const API_BASE = ''; // kosong = sama-host dengan ESP32
+
+  // ── State Mapping ────────────────────────────────────
+  const STATE_META = {
+    HOMING:       { label: 'Homing...', sub: 'Mencari posisi referensi atas', dot: 'homing', icon: '↑' },
+    IDLE:         { label: 'Siap',      sub: 'Tekan START untuk memulai siklus', dot: 'idle', icon: '⏸' },
+    CEK_HOPPER:   { label: 'Cek Hopper', sub: 'Memeriksa level kedelai', dot: 'running', icon: '🔍' },
+    TUNGGU_SIAP:  { label: 'Tunggu Siap', sub: 'Pasang plastik lalu tekan START', dot: 'homing', icon: '🧤' },
+    DOSING:       { label: 'Mengisi...', sub: 'Kedelai sedang dimasukkan ke cetakan', dot: 'running', icon: '🌾' },
+    PRESSING:     { label: 'Pressing!', sub: 'Menekan kedelai dalam 6 slot', dot: 'running', icon: '⬇' },
+    LIFT_OFF:     { label: 'Naik...', sub: 'Frame terangkat, tempe bebas di ancak', dot: 'running', icon: '⬆' },
+    SELESAI:      { label: 'Selesai!', sub: '6 tempe berhasil dicetak — ambil ancak', dot: 'running', icon: '✅' },
+    ALARM_HOPPER: { label: '⚠ Kedelai Habis!', sub: 'Isi hopper lalu tekan STOP', dot: 'alarm', icon: '🚨' },
+    ALARM_ERROR:  { label: '⚠ Error Mekanik!', sub: 'Cek mesin → tekan STOP untuk restart', dot: 'alarm', icon: '🔴' },
+  };
+
+  // ── Fetch API Status ─────────────────────────────────
+  async function fetchStatus() {
+    try {
+      const res = await fetch(API_BASE + '/api/status');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const d = await res.json();
+      updateUI(d);
+    } catch (e) {
+      document.getElementById('statusState').textContent = 'Koneksi terputus';
+      document.getElementById('statusSub').textContent = e.message;
+      document.getElementById('statusDot').className = 'status-dot alarm';
+    }
+  }
+
+  function updateUI(d) {
+    // IP Badge
+    document.getElementById('ipBadge').textContent = d.ipAddress || 'offline';
+
+    // Status
+    const meta = STATE_META[d.state] || { label: d.state, sub: '', dot: 'idle', icon: '?' };
+    const dotEl = document.getElementById('statusDot');
+    const stEl  = document.getElementById('statusState');
+    dotEl.className = 'status-dot ' + meta.dot;
+    dotEl.textContent = meta.icon;
+    stEl.innerHTML = meta.label;
+
+    // Mode badge
+    const badge = d.modeDosing === 'otomatis'
+      ? '<span class="mode-badge mode-auto">Auto</span>'
+      : '<span class="mode-badge mode-manual">Manual</span>';
+    stEl.innerHTML += badge;
+    document.getElementById('modeBadge');
+
+    document.getElementById('statusSub').textContent = meta.sub;
+
+    // Berat
+    const bv = d.beratSaatIni || 0;
+    const bt = d.beratTarget  || 0;
+    document.getElementById('beratVal').textContent = bv;
+    document.getElementById('beratMax').textContent = bt > 0 ? bt : '—';
+    const beratPct = bt > 0 ? Math.min(bv / bt * 100, 100) : 0;
+    document.getElementById('beratBar').style.width = beratPct + '%';
+
+    // Hopper (max = 25cm, jarak kecil = banyak)
+    const hl = d.levelHopper || 0;
+    const hopperPct = Math.min(hl / 25 * 100, 100);
+    document.getElementById('hopperVal').textContent = hl > 100 ? 'Tidak terdeteksi' : hl.toFixed(1) + ' cm';
+    document.getElementById('hopperBar').style.width = hopperPct + '%';
+
+    // Counter
+    document.getElementById('counterHari').textContent  = d.counterHariIni ?? '—';
+    document.getElementById('counterTotal').textContent = d.counterTotal   ?? '—';
+
+    // Limit Switches
+    updateSensor('dotLimitAtas',  'valLimitAtas',  d.limitAtas,  'Aktif', 'Tidak');
+    updateSensor('dotLimitBawah', 'valLimitBawah', d.limitBawah, 'Aktif', 'Tidak');
+
+    // Slot boxes — semua aktif saat pressing/selesai
+    const isActive = ['PRESSING','LIFT_OFF','SELESAI','DOSING'].includes(d.state);
+    for (let i = 1; i <= 6; i++) {
+      const el = document.getElementById('slot' + i);
+      el.className = 'slot-box' + (isActive ? ' active' : '');
+    }
+
+    // Buttons
+    document.getElementById('btnStart').disabled = d.state !== 'IDLE';
+    document.getElementById('btnStop').disabled  = d.state === 'IDLE';
+  }
+
+  function updateSensor(dotId, valId, active, textOn, textOff) {
+    const dot = document.getElementById(dotId);
+    const val = document.getElementById(valId);
+    dot.className = 'sensor-dot ' + (active ? 'active' : 'inactive');
+    val.textContent = active ? textOn : textOff;
+    val.style.color = active ? 'var(--green)' : 'var(--muted)';
+  }
+
+  // ── Kirim Perintah ────────────────────────────────────
+  async function sendCmd(cmd) {
+    try {
+      const res = await fetch(API_BASE + '/api/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cmd })
+      });
+      const d = await res.json();
+      showToast(d.msg || cmd + ' dikirim', d.ok ? 'success' : 'error');
+    } catch (e) {
+      showToast('Gagal: ' + e.message, 'error');
+    }
+  }
+
+  // ── Simpan Konfigurasi ────────────────────────────────
+  async function saveConfig() {
+    const payload = {
+      beratTarget: parseFloat(document.getElementById('cfgBerat').value) || 0,
+      waktuTahan:  parseInt(document.getElementById('cfgWaktu').value)   || 5,
+      levelAlarm:  parseFloat(document.getElementById('cfgAlarm').value) || 8,
+    };
+    try {
+      const res = await fetch(API_BASE + '/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const d = await res.json();
+      showToast(d.msg || 'Tersimpan!', 'success');
+    } catch (e) {
+      showToast('Gagal simpan: ' + e.message, 'error');
+    }
+  }
+
+  // ── Load Config ke Form ────────────────────────────────
+  async function loadConfig() {
+    try {
+      const res = await fetch(API_BASE + '/api/config');
+      const d = await res.json();
+      document.getElementById('cfgBerat').value = d.beratTarget ?? '';
+      document.getElementById('cfgWaktu').value = d.waktuTahan  ?? 5;
+      document.getElementById('cfgAlarm').value = d.levelAlarm  ?? 8;
+    } catch (e) { /* silent */ }
+  }
+
+  // ── Tare Load Cell ────────────────────────────────────
+  async function tare() {
+    try {
+      const res = await fetch(API_BASE + '/api/calibrate', { method: 'POST' });
+      const d = await res.json();
+      showToast(d.msg || 'Tare selesai', 'success');
+    } catch (e) {
+      showToast('Gagal: ' + e.message, 'error');
+    }
+  }
+
+  // ── Toast ─────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg, type = '') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'show ' + type;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+  }
+
+  // ── Start polling ─────────────────────────────────────
+  fetchStatus();
+  loadConfig();
+  setInterval(fetchStatus, 1000);
+</script>
+</body>
+</html>
