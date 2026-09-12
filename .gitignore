@@ -26,3 +26,14 @@ $RECYCLE.BIN/
 *.log
 scratch/
 .system_generated/
+
+# Raw Reference Screenshots & Drafts
+Referensi/
+docs/implementation_plan_v*.md
+docs/Penjelasan Lengkap.md
+
+# Superseded / Unselected Variant Assets
+assets/*_opsi1*
+assets/*_v5*
+assets/slide_stages_detail.jpg
+assets/slide_mechanism_detail.jpg

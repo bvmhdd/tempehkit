@@ -6,30 +6,38 @@
 [![Hardware Status](https://img.shields.io/badge/Status-Ready%20for%20Fabrication-brightgreen.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**TempehKit** adalah solusi otomasi pencetakan tempe 6-slot simultan berbasis Internet of Things (IoT) yang dirancang untuk mentransformasi proses produksi di pabrik tempe UKM / keluarga. Sistem ini mengintegrasikan mikrokontroler **ESP32**, penekanan bermotor *Lead Screw*, penimbangan presisi *Load Cell HX711*, pemantauan level bahan *Ultrasonic HC-SR04*, dan kendali jarak jauh melalui *Web Dashboard Wi-Fi*.
+**TempehKit** adalah solusi otomasi pencetakan tempe berbasis Internet of Things (IoT) yang dirancang untuk mentransformasi proses produksi di pabrik tempe UKM / keluarga. Sistem ini mengintegrasikan mikrokontroler **ESP32**, sistem dosing hopper multi-slot, pelipat plastik simultan, penekanan bermotor *Lead Screw*, dan pemantauan lokal via *Web Dashboard Wi-Fi*.
 
 ---
 
-## 💡 Inovasi Utama: *Lift-Off Mold Frame* (Tanpa Dibalik)
+## 📌 PANDUAN KERJA TIM & BLUEPRINT FINAL (BACA INI DULU)
 
-Pada metode konvensional, operator harus mengangkat cetakan kayu/besi seberat 5–8 kg dan **membalik cetakan secara manual** ratusan kali sehari ke atas ancak bambu. Metode ini menguras tenaga fisik, lambat, serta berisiko tinggi merusak struktur tempe dan memicu cedera pergelangan/pinggang.
+Untuk memudahkan pembagian tugas dan implementasi langsung di lapangan, silakan langsung merujuk ke dua dokumen utama berikut:
 
-**TempehKit memecahkan masalah ini dengan mekanisme Lift-Off:**
-1. Papan ancak bambu diletakkan di dasar meja mesin.
-2. Plastik lembaran perforasi disisipkan pada tiap slot.
-3. Frame cetakan 6-slot diturunkan merapat menindih alas.
-4. Kedelai dimasukkan dari corong atas dan dipress simultan dengan motor lead screw.
-5. Dinding cetakan diangkat vertikal ke atas (*lift-off*), meninggalkan tempe yang telah terbungkus rapi di atas ancak bambu tanpa perlu pernah dibalik!
-6. **Beban fisik operator berkurang > 70%** dengan throughput meningkat signifikan (**144–180 tempe/jam**).
+1. 🚀 **[`docs/PROJECT_EXECUTION_PLAN.md`](docs/PROJECT_EXECUTION_PLAN.md) — PANDUAN EKSEKUSI PROYEK (SPRINT 0–4)**
+   * **Wajib dibaca oleh rekan kerja/tim pelaksana.**
+   * Pembagian tugas terstruktur dari *Sprint 0 (Procurement & Belanja)*, *Sprint 1 (Bench-Test Elektronik)*, *Sprint 2 (Fabrikasi Mekanik)*, *Sprint 3 (Integrasi)*, hingga *Sprint 4 (Uji Produksi Nyata)*.
+   * Dilengkapi checklist siap pakai, *Acceptance Criteria*, dan SOP penanganan kendala.
+
+2. 📋 **[`docs/implementation_plan_final.md`](docs/implementation_plan_final.md) — BLUEPRINT TEKNIS ARSITEKTUR FINAL (v8)**
+   * **Arsitektur Final: 5-Slot Serentak (Simultan)** — seluruh 5 slot didosing, dilipat plastiknya, dan dipress bersamaan tanpa rel geser (lebih cepat & hemat Rp 319.000).
+   * Rincian Bill of Materials (BOM), skematik perkabelan ESP32, tata letak mekanik, dan logika firmware.
 
 ---
 
-## 📸 Visualisasi Desain & Skematik
+## 📸 Visualisasi Desain & Mekanisme Final (Tier 2)
 
-| Render 3D Konsep Mesin | Skematik Pengkabelan ESP32 |
+| Konsep Mesin Tier 2 (ESP32) | Mekanisme Lipat Plastik Serentak |
 | :---: | :---: |
-| ![Konsep 3D Mesin](assets/mesin_tempe_design.jpg) | ![Wiring Diagram ESP32](assets/wiring_diagram_esp32.jpg) |
-| *Desain rangka besi, hopper atas, kolom lead screw, dan panel box* | *Pengkabelan ESP32 ke sensor, driver L298N, LCD, relay, dan limit switch* |
+| ![Konsep Mesin Tier 2](assets/machine_opsi2_balanced.jpg) | ![Mekanisme Lipat](assets/slide_stages_corrected.jpg) |
+| *Desain Tier 2 Balanced: 5-Slot Serentak, Dual Fold Bar, Hopper Panjang* | *Tahapan pelipatan lembaran plastik ke dalam slot cetakan* |
+
+| Proses Balik ke Ancak Bambu | Perbandingan Material Cetakan |
+| :---: | :---: |
+| ![Proses Balik ke Ancak](assets/flip_to_ancak_process.jpg) | ![Material Comparison](assets/material_comparison.jpg) |
+| *Alur transfer tempe dari cetakan ke ancak bambu tradisional* | *Kelebihan & kekurangan material (HDPE Food Grade vs Stainless Steel)* |
+
+---
 
 ---
 
@@ -57,17 +65,23 @@ Pada metode konvensional, operator harus mengangkat cetakan kayu/besi seberat 5�
 ```
 tempehkit/
 ├── assets/                          # Dokumentasi visual & gambar teknis
+│   ├── machine_opsi2_balanced.jpg   # Render 3D mesin final Tier 2 ESP32
+│   ├── slide_stages_corrected.jpg   # Visual tahapan lipat plastik serentak
+│   ├── flip_to_ancak_process.jpg    # Visual proses balik cetakan ke ancak bambu
+│   ├── material_comparison.jpg      # Komparasi material cetakan (HDPE vs SS304)
+│   ├── system_comparison.jpg        # Komparasi sistem Embedded vs IoT Tier 2
 │   ├── cetakan_referensi.jpg        # Foto cetakan kayu & ancak bambu asli pabrik
 │   ├── mesin_tempe_design.jpg       # Render 3D visual konsep mesin
 │   └── wiring_diagram_esp32.jpg     # Skematik diagram pengkabelan lengkap
-├── docs/                            # Dokumentasi teknis & manufaktur
+├── docs/                            # Dokumentasi teknis & manajemen proyek
+│   ├── PROJECT_EXECUTION_PLAN.md    # 🚀 PANDUAN EKSEKUSI PROYEK (Sprint 0–4)
+│   ├── implementation_plan_final.md # 📋 BLUEPRINT TEKNIS FINAL v8 (5 Slot Serentak)
 │   ├── Project_Brief_Mesin_Pencetak_Tempe.pdf  # PDF Resmi Blueprint (7 Halaman)
 │   ├── project_brief.html           # File sumber print A4 responsive
 │   ├── panduan_uji_hardware.md      # Panduan bench-test mandiri sebelum las
 │   ├── dimensi_mekanik.md           # Gambar kerja dimensi untuk bengkel las
-│   ├── desain_cetakan_final.md      # Spesifikasi detail sistem lift-off
-│   ├── dokumentasi_lengkap.md       # Rangkuman arsitektur mekatronika
-│   └── implementation_plan.md       # Rencana aksi & jadwal kerja
+│   ├── desain_cetakan_final.md      # Spesifikasi detail sistem cetakan
+│   └── dokumentasi_lengkap.md       # Rangkuman arsitektur mekatronika
 ├── firmware/                        # Source code ESP32 & Web Dashboard
 │   ├── mesin_tempe/                 # Kode firmware produksi utama
 │   │   ├── mesin_tempe.ino          # Program kontrol FSM ESP32
