@@ -26,6 +26,20 @@ Mesin semi-otomatis untuk mencetak tempe. Seluruh 5 slot diproses **secara bersa
 
 ---
 
+## 📸 MULTI-ANGLE CAD DESIGN (TIER 2 — 5 SLOT SERENTAK)
+
+| 1. Isometric 3D View | 2. Front Elevation View |
+| :---: | :---: |
+| ![Isometric View](../assets/tier2_isometric_view.jpg) | ![Front View](../assets/tier2_front_view.jpg) |
+| *Perspektif 3D mesin lengkap dengan hopper 5 nozzle & controller box* | *Tampak depan: 5 slot serentak (50.5cm), lead screw, dan fold bar* |
+
+| 3. Side View (Folding & Press Mechanism) | 4. Top Plan View (Mold & Rails) |
+| :---: | :---: |
+| ![Side Folding View](../assets/tier2_side_folding.jpg) | ![Top View](../assets/tier2_top_view.jpg) |
+| *Detail mekanisme lintasan lipat plastik dan stroke penekanan vertikal* | *Tampak atas: dimensi 5 slot (21.3x6.6cm), bar lipat 52cm, dan gate hopper* |
+
+---
+
 ## 2. PERBANDINGAN ARSITEKTUR
 
 ```

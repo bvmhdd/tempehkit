@@ -25,19 +25,22 @@ Untuk memudahkan pembagian tugas dan implementasi langsung di lapangan, silakan 
 
 ---
 
-## 📸 Visualisasi Desain & Mekanisme Final (Tier 2)
+## 📸 Visualisasi Desain CAD Multi-Sudut (Tier 2 Final)
 
-| Konsep Mesin Tier 2 (ESP32) | Mekanisme Lipat Plastik Serentak |
+| 1. Isometric 3D View | 2. Front Elevation View |
 | :---: | :---: |
-| ![Konsep Mesin Tier 2](assets/machine_opsi2_balanced.jpg) | ![Mekanisme Lipat](assets/slide_stages_corrected.jpg) |
-| *Desain Tier 2 Balanced: 5-Slot Serentak, Dual Fold Bar, Hopper Panjang* | *Tahapan pelipatan lembaran plastik ke dalam slot cetakan* |
+| ![Isometric View](assets/tier2_isometric_view.jpg) | ![Front View](assets/tier2_front_view.jpg) |
+| *Perspektif 3D mesin lengkap dengan hopper 5 nozzle & controller box* | *Tampak depan: 5 slot serentak (50.5cm), lead screw, dan fold bar* |
 
-| Proses Balik ke Ancak Bambu | Perbandingan Material Cetakan |
+| 3. Side View (Folding & Press Mechanism) | 4. Top Plan View (Mold & Rails) |
 | :---: | :---: |
-| ![Proses Balik ke Ancak](assets/flip_to_ancak_process.jpg) | ![Material Comparison](assets/material_comparison.jpg) |
-| *Alur transfer tempe dari cetakan ke ancak bambu tradisional* | *Kelebihan & kekurangan material (HDPE Food Grade vs Stainless Steel)* |
+| ![Side Folding View](assets/tier2_side_folding.jpg) | ![Top View](assets/tier2_top_view.jpg) |
+| *Detail mekanisme lintasan lipat plastik dan stroke penekanan vertikal* | *Tampak atas: dimensi 5 slot (21.3x6.6cm), bar lipat 52cm, dan gate hopper* |
 
----
+| Mekanisme Lipat Plastik Serentak | Proses Balik ke Ancak Bambu |
+| :---: | :---: |
+| ![Mekanisme Lipat](assets/slide_stages_corrected.jpg) | ![Proses Balik ke Ancak](assets/flip_to_ancak_process.jpg) |
+| *Tahapan pelipatan lembaran plastik ke dalam slot cetakan* | *Alur transfer tempe dari cetakan ke ancak bambu tradisional* |
 
 ---
 
@@ -45,7 +48,7 @@ Untuk memudahkan pembagian tugas dan implementasi langsung di lapangan, silakan 
 
 | Parameter | Spesifikasi Desain |
 | :--- | :--- |
-| **Kapasitas Cetak** | 6 Slot tempe paralel per siklus (&plusmn;144–180 tempe/jam) |
+| **Kapasitas Cetak** | 5 Slot tempe paralel serentak per siklus (&plusmn;250–300 tempe/jam) |
 | **Dimensi Slot Tempe** | Panjang 21.3 cm &times; Lebar 6.6 cm &times; Tebal 3.6 cm |
 | **Dimensi Luar Frame** | Panjang 50.5 cm &times; Lebar 24.0 cm (Jarak antar slot 1.0 cm) |
 | **Dimensi Alas / Ancak** | Papan bambu 50.5 cm &times; Lebar 7.0 cm |
