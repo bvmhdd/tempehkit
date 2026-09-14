@@ -8,6 +8,12 @@
 
 **TempehKit** adalah solusi otomasi pencetakan tempe berbasis Internet of Things (IoT) yang dirancang untuk mentransformasi proses produksi di pabrik tempe UKM / keluarga. Sistem ini mengintegrasikan mikrokontroler **ESP32**, sistem dosing hopper multi-slot, pelipat plastik simultan, penekanan bermotor *Lead Screw*, dan pemantauan lokal via *Web Dashboard Wi-Fi*.
 
+<p align="center">
+  <img src="assets/machine_opsi2_balanced.jpg" alt="TempehKit Tier 2 Balanced 3D Design" width="100%" />
+  <br>
+  <em><strong>Visualisasi Desain 3D Final: Mesin Pencetak Tempe 5-Slot Simultan (Tier 2 ESP32 Balanced)</strong></em>
+</p>
+
 ---
 
 ## 📌 PANDUAN KERJA TIM & BLUEPRINT FINAL (BACA INI DULU)
@@ -27,15 +33,20 @@ Untuk memudahkan pembagian tugas dan implementasi langsung di lapangan, silakan 
 
 ## 📸 Visualisasi Desain CAD Multi-Sudut (Tier 2 Final)
 
-| 1. Isometric 3D View | 2. Front Elevation View |
+| 1. Isometric Hero Render | 2. Exploded Engineering View |
 | :---: | :---: |
-| ![Isometric View](assets/tier2_isometric_view.jpg) | ![Front View](assets/tier2_front_view.jpg) |
-| *Perspektif 3D mesin lengkap dengan hopper 5 nozzle & controller box* | *Tampak depan: 5 slot serentak (50.5cm), lead screw, dan fold bar* |
+| ![Isometric Hero View](assets/machine_opsi2_balanced.jpg) | ![Exploded View](assets/machine_opsi2_exploded_view.jpg) |
+| *Perspektif 3D mesin lengkap (5-slot simultan, hopper, controller)* | *Tampilan exploded komponen cetakan, lead screw, & sistem pelipat* |
 
-| 3. Side View (Folding & Press Mechanism) | 4. Top Plan View (Mold & Rails) |
+| 3. Front Elevation View | 4. Rear Elevation View |
 | :---: | :---: |
-| ![Side Folding View](assets/tier2_side_folding.jpg) | ![Top View](assets/tier2_top_view.jpg) |
-| *Detail mekanisme lintasan lipat plastik dan stroke penekanan vertikal* | *Tampak atas: dimensi 5 slot (21.3x6.6cm), bar lipat 52cm, dan gate hopper* |
+| ![Front View](assets/machine_opsi2_front_view.jpg) | ![Rear View](assets/machine_opsi2_rear_view.jpg) |
+| *Tampak depan: 5 slot cetakan (50.5cm), lead screw, dan fold bar* | *Tampak belakang: dudukan rangka, motor drive, & jalur kabel* |
+
+| 5. Top Plan View | 6. Side Elevation View (Kanan & Kiri) |
+| :---: | :---: |
+| ![Top View](assets/machine_opsi2_top_view.jpg) | ![Right Side View](assets/machine_opsi2_right_side_view.jpg) |
+| *Tampak atas: dimensi 5 slot (21.3x6.6cm), bar lipat, & hopper gate* | *Tampak samping: mekanisme engsel lipat dan stroke penekan vertikal* |
 
 | Mekanisme Lipat Plastik Serentak | Proses Balik ke Ancak Bambu |
 | :---: | :---: |
@@ -68,7 +79,13 @@ Untuk memudahkan pembagian tugas dan implementasi langsung di lapangan, silakan 
 ```
 tempehkit/
 ├── assets/                          # Dokumentasi visual & gambar teknis
-│   ├── machine_opsi2_balanced.jpg   # Render 3D mesin final Tier 2 ESP32
+│   ├── machine_opsi2_balanced.jpg   # Render 3D mesin final Tier 2 ESP32 (Hero)
+│   ├── machine_opsi2_exploded_view.jpg # Exploded view rakitan mekatronika
+│   ├── machine_opsi2_front_view.jpg # Tampak depan mesin CAD 5-slot
+│   ├── machine_opsi2_rear_view.jpg  # Tampak belakang mesin & motor drive
+│   ├── machine_opsi2_top_view.jpg   # Tampak atas dimensi cetakan & hopper
+│   ├── machine_opsi2_left_side_view.jpg  # Tampak samping kiri lintasan lipat
+│   ├── machine_opsi2_right_side_view.jpg # Tampak samping kanan mekanisme press
 │   ├── slide_stages_corrected.jpg   # Visual tahapan lipat plastik serentak
 │   ├── flip_to_ancak_process.jpg    # Visual proses balik cetakan ke ancak bambu
 │   ├── material_comparison.jpg      # Komparasi material cetakan (HDPE vs SS304)
