@@ -1,493 +1,277 @@
 # Mesin Pencetak Tempe Semi-Otomatis — Tier 2 ESP32 WiFi
-## Implementation Plan FINAL v8 — 5 SLOT SERENTAK
-### Semua slot diproses bersamaan, tanpa mekanisme geser
+## Implementation Plan FINAL v9 — 6 SLOT SIMULTAN (FLIP 180° LEAN)
+### 6 Slot Simultan, Ejeksi Rotari 180°, Tanpa Fold Bar, Tanpa HC-SR04, Tanpa LCD
 
-> **Tanggal**: 13 September 2026  
-> **Status**: FINAL v8 — Revisi arsitektur: 5 slot sekaligus  
-> **Tier**: 2 — ESP32 WiFi + Local Web Dashboard  
-> **Perubahan dari v7**: Hilangkan sliding mechanism → tambah long hopper + dual fold bar + wide press plate
+> **Tanggal**: September 2026  
+> **Status**: FINAL v9 — Arsitektur Mutakhir: 6 Slot Simultan dengan Mekanisme Flip Mold 180°  
+> **Tier**: 2 — ESP32 WiFi + Local Web Dashboard (HTTP REST API)  
+> **Perubahan Utama**:
+> - Cetakan ditingkatkan menjadi **6 slot simultan** (lebar mold 59.1 cm).
+> - Ejeksi tempe menggunakan **mekanisme rotasi flip 180°** (NEMA 23 + Timing Belt HTD3M 1:3 + 2× Elektromagnet 12V).
+> - Mekanisme lipat plastik otomatis (*fold bar*) dihilangkan → **operator melipat manual** sebelum menekan START (menghemat biaya dan menyederhanakan mekanik).
+> - Sensor ultrasonik HC-SR04 dihilangkan → **operator memantau level kedelai secara visual** (mencegah false alarm pantulan butiran).
+> - Layar LCD 16×2 I2C dihilangkan → **monitoring status dialihkan ke Web Dashboard WiFi ESP32** dan feedback lokal di mesin menggunakan **LED Hijau/Merah + Buzzer**.
 
 ---
 
 ## 1. RINGKASAN SISTEM
 
-Mesin semi-otomatis untuk mencetak tempe. Seluruh 5 slot diproses **secara bersamaan** dalam 1 siklus.
+Mesin semi-otomatis untuk mencetak tempe secara massal. Seluruh 6 slot dicetak **secara bersamaan** dalam 1 siklus produksi terpadu.
 
-**Alur kerja**:
-1. Operator pasang 5 plastik ke 5 slot sekaligus
-2. Tekan START
-3. Hopper dosi semua 5 slot sekaligus
-4. Fold bar lipat semua 5 plastik sekaligus
-5. Press plate tekan semua 5 slot sekaligus
-6. Buzzer bunyi → operator angkat cetakan → balik ke ancak
+### Alur Siklus Kerja (Lean 9-State):
+1. **Pemasangan Plastik:** Operator meletakkan 6 lembar plastik pembungkus ke dalam 6 slot cetakan dan melipat ujung plastik secara manual.
+2. **Start Siklus:** Operator menekan tombol fisik **START** (atau tombol START pada Web Dashboard di smartphone).
+3. **Pengisian Otomatis (Dosing):** Pintu geser (*gate*) corong terbuka oleh Solenoid 12V. Kedelai mengalir rata ke 6 pipa cabang nozzle Y-Fork. Load Cell 20kg membaca pertambahan berat total secara real-time. Begitu target tercapai (misal: 6 × 150g = 900g), gate tertutup seketika.
+4. **Pengepresan (Pressing):** Motor DC Gearbox 12V memutar dual Lead Screw T8, menurunkan pelat penekan berpad 6 slot hingga batas limit switch bawah. Menahan tekanan selama durasi tertentu (default: 5 detik).
+5. **Angkat Pelat (Lift-Off):** Pelat penekan naik kembali ke posisi atas hingga menyentuh limit switch atas.
+6. **Kunci Tutup (Lock Lid):** Dua buah Solenoid Elektromagnet 12V aktif menahan tutup cetakan dengan daya tahan ≥20 kg.
+7. **Pembalikan Cetakan (Rotate Mold 180°):** Motor Stepper NEMA 23 memutar cetakan 180° melalui reduksi timing belt HTD3M (2400 step). Cetakan kini terbalik tepat di atas ancak bambu penampung.
+8. **Pelepasan Tempe (Unlock Lid):** Elektromagnet dimatikan sehingga tempe yang telah terbungkus plastik turun dengan mulus ke atas ancak bambu. Buzzer berbunyi 3× dan LED Hijau berkedip menandakan tempe siap diambil.
+9. **Kembali ke Posisi Awal (Return Mold):** NEMA 23 memutar balik cetakan ke posisi 0°. Counter produksi bertambah (+1 batch / +6 tempe) dan mesin kembali ke status **IDLE**.
 
-**Kapasitas target**: ~1 menit/papan (5 slot) → ±60 papan/jam  
-*(jauh lebih cepat dari sequential 3 menit/papan!)*
+**Target Kapasitas Produksi**: ~60–75 detik per siklus (6 tempe) → **±300–360 balok tempe per jam**.
 
 ---
 
-## 📸 MULTI-ANGLE CAD DESIGN (TIER 2 — 5 SLOT SERENTAK)
+## 📸 DESAIN CAD & SKETSA TEKNIK
 
-| 1. Isometric 3D View | 2. Front Elevation View |
+| 1. Isometric 3D View (Rotary Flip Mechanism) | 2. Detail 6-Slot Mold & Dosing Nozzle |
 | :---: | :---: |
-| ![Isometric View](../assets/tier2_isometric_view.jpg) | ![Front View](../assets/tier2_front_view.jpg) |
-| *Perspektif 3D mesin lengkap dengan hopper 5 nozzle & controller box* | *Tampak depan: 5 slot serentak (50.5cm), lead screw, dan fold bar* |
+| ![Isometric Rotary View](../assets/mold_rotary_isometric_view.jpg) | ![Mold Detail](../assets/machine_opsi2_mold_detail.jpg) |
+| *Perspektif 3D cetakan rotari dengan poros as Ø20mm, puli HTD3M 60T, dan bracket NEMA 23* | *Detail geometri cetakan 6 slot (59.1cm) dengan nozzle pengisian Y-Fork* |
 
-| 3. Side View (Folding & Press Mechanism) | 4. Top Plan View (Mold & Rails) |
+| 3. Front Elevation View (Rangka 90cm) | 4. Top Plan View (Cetakan & Penekan) |
 | :---: | :---: |
-| ![Side Folding View](../assets/tier2_side_folding.jpg) | ![Top View](../assets/tier2_top_view.jpg) |
-| *Detail mekanisme lintasan lipat plastik dan stroke penekanan vertikal* | *Tampak atas: dimensi 5 slot (21.3x6.6cm), bar lipat 52cm, dan gate hopper* |
+| ![Front View](../assets/machine_opsi2_front_view.jpg) | ![Top View](../assets/machine_opsi2_top_view.jpg) |
+| *Tampak depan: Rangka lebar 90cm, dual lead screw T8, dan corong hopper 6 nozzle* | *Tampak atas: Tata letak cetakan 6 slot, jarak pitch 8.5cm, dan jalur transmisi motor* |
 
 ---
 
-## 2. PERBANDINGAN ARSITEKTUR
+## 2. PERBANDINGAN EVOLUSI ARSITEKTUR
 
 ```
-v7 (Sequential per-slot):           v8 (Simultan 5 slot):
-──────────────────────────────       ──────────────────────────────
-Mold geser kanan tiap slot           Mold DIAM (tidak bergerak)
-1 nozzle hopper kecil                1 hopper panjang 5 lubang
-2 servo arm kecil per slot           2 fold bar panjang 50cm
-1 press plate kecil per slot         1 press plate panjang 50cm
-NEMA17 + belt + rail                 TIDAK ADA (dihilangkan)
-Siklus ~3 menit/papan                Siklus ~45-60 detik/papan
-```
-
-### Komponen yang DIHILANGKAN (hemat Rp 319.000):
-- ~~NEMA17 Stepper (Rp 80K)~~
-- ~~Driver A4988 (Rp 18K)~~
-- ~~GT2 Belt + Pulley (Rp 35K)~~
-- ~~Linear Rail MGR12 × 2 (Rp 170K)~~
-- ~~Idler Pulley (Rp 16K)~~
-
----
-
-## 3. GEOMETRI CETAKAN (orientasi penting!)
-
-```
-TAMPAK ATAS CETAKAN (50.5 × 24cm):
-
-← 50.5cm →
-┌──────────────────────────────────────────────────────────┐
-│6.75cm│S1 6.6│1│S2 6.6│1│S3 6.6│1│S4 6.6│1│S5 6.6│6.75cm│ 24cm
-│      │21.3cm│ │21.3cm│ │21.3cm│ │21.3cm│ │21.3cm│      │
-└──────────────────────────────────────────────────────────┘
-         ↑ slot panjangnya ke arah 24cm (depan-belakang)
-         ↑ kelebihan plastik 4-5cm ada di sisi DEPAN dan BELAKANG tiap slot
-
-POSISI FOLD BAR:
-  Bar DEPAN: memanjang sepanjang 50.5cm, di sisi depan mold (y = 0)
-  Bar BELAKANG: memanjang sepanjang 50.5cm, di sisi belakang mold (y = 24cm)
-  → Kedua bar angkat semua 5 kelebihan plastik depan dan belakang sekaligus
+v8 (5-Slot Simultan, Lift-Off):       v9 (6-Slot Simultan, Rotary Flip Lean):
+──────────────────────────────────     ──────────────────────────────────────────
+5 Slot cetakan (lebar 50.5cm)          6 Slot cetakan (lebar 59.1cm)
+4-5 Servo MG996R untuk fold bar        TIDAK ADA FOLD BAR (Operator lipat manual)
+Frame Lift-Off vertikal (rawan macet)  Rotary Flip 180° (NEMA23 + Belt HTD3M 1:3)
+Ejeksi manual angkat ancak             Ejeksi gravitasi langsung ke ancak bambu
+Sensor ultrasonik HC-SR04 (noise)      TIDAK ADA HC-SR04 (Operator pantau visual)
+Layar LCD 16×2 fisik I2C               TIDAK ADA LCD (Web Dashboard WiFi ESP32)
+Siklus ~5 tempe / 60 detik             Siklus ~6 tempe / 65 detik (+20% kapasitas)
 ```
 
 ---
 
-## 4. MEKANISME PROVEN — REFERENSI & BEST PRACTICE
-
-### 4.1 Dosing: Hopper Panjang 5 Nozzle + 1 Load Cell Total
-
-**Proven di**: Mesin packaging biji-bijian multi-lane (grain bagging multi-head), feed dispenser ternak multi-slot.
+## 3. GEOMETRI CETAKAN 6-SLOT
 
 ```
-HOPPER SS304 PANJANG (tampak depan):
-┌────────────────────────────────────────────────────────┐
-│                  Hopper SS304                           │
-│               Lebar 50.5cm (full mold)                  │
-│  ╲_________________________________________/            │
-│     ○       ○       ○       ○       ○                  │  ← 5 lubang nozzle
-│    N1      N2      N3      N4      N5                   │
-│    |        |       |       |       |                   │
-└────────────────────────────────────────────────────────┘
-     ▼       ▼       ▼       ▼       ▼
-  [S1]    [S2]    [S3]    [S4]    [S5]   ← 5 slot mold
+TAMPAK ATAS CETAKAN STAINLESS STEEL 304 (59.1 × 24 cm):
 
-Gate: 1 servo MG996R membuka/menutup seluruh 5 lubang sekaligus
-      via 1 plat gate sliding horizontal (digeser servo 1x)
-
-Load Cell: 1 buah di bawah SELURUH MOLD
-           Baca total berat → target = 5 × target_per_slot
-           Contoh: target 200g/slot → gate tutup saat total ≥ 990g (offset 10g)
+←─────────────────────────────────── 59.1 cm ───────────────────────────────────→
+┌───────────────────────────────────────────────────────────────────────────────┐
+│ 6.75 │ S1: 6.6 │ 1 │ S2: 6.6 │ 1 │ S3: 6.6 │ 1 │ S4: 6.6 │ 1 │ S5: 6.6 │ 1 │ S6: 6.6 │ 6.75 │ 24 cm
+│  cm  │  21.3cm │cm │  21.3cm │cm │  21.3cm │cm │  21.3cm │cm │  21.3cm │cm │  21.3cm │  cm  │
+└───────────────────────────────────────────────────────────────────────────────┘
+       ▲         ▲   ▲         ▲   ▲         ▲   ▲         ▲   ▲         ▲   ▲
+       └─Nozzle 1─┘   └─Nozzle 2─┘   └─Nozzle 3─┘   └─Nozzle 4─┘   └─Nozzle 5─┘   └─Nozzle 6─┘
+       ◄────────────── Pitch Antar Lubang Nozzle = 8.5 cm center-to-center ─────────────►
 ```
 
-**Desain Gate Hopper**:
-- 1 plat aluminium sliding (panjang 52cm, lebar 4cm) menutupi semua 5 lubang sekaligus
-- Digerakkan oleh 1 servo MG996R dengan pushrod/linkage ke gate sliding
-- Alternatif lebih sederhana: gate "engsel" → 1 servo angkat flap plat dari bawah nozzle
-- Nozzle Ø35mm per slot → volume flow dapat diatur dengan ukuran lubang
-
-**Kelemahan yang harus diantisipasi**:
-- Distribusi tidak 100% merata antar slot (bisa beda ±10–15g antar slot)
-- Mitigasi: kalibrasi ukuran lubang nozzle (yang di tengah mungkin perlu lebih kecil)
-- Bisa diterima untuk produksi tempe (tidak butuh presisi farmasi)
-
-### 4.2 Folding Plastik: Dual Fold Bar (Long Bar Mechanism)
-
-**Proven di**: Mesin box folder industri (carton folding machine), pizza box folding, flat-pack packaging folder — semua menggunakan long bar hinge mechanism.
-
-```
-MEKANISME FOLD BAR (tampak sisi pendek = 24cm):
-
-POSISI REST (bar rebah ke luar):    POSISI FOLD (bar tegak ke atas):
-
-         Slot                              ╔════╗
-         ╔══════════╗                      ║    ║ ← kelebihan plastik
-         ║  kedelai ║                      ║    ║   terdorong ke atas
-         ╚══════════╝                   ╔══╝    ║
-  ───────╗                             ──║ slot ║──
-  [BAR]──╝                              ╚═══════╝
-  servo=0° (bar horizontal)           [BAR] servo=90° (bar vertikal)
-
-IMPLEMENTASI:
-- Fold bar DEPAN: aluminium bar (Ø20mm / 20×20mm profil) panjang 50–52cm
-  Dipasang horizontal di DEPAN mold, engsel di dasar (pivot point)
-  Diangkat oleh: 2x servo MG996R (kiri dan kanan bar) via lengan 8cm
-  → gerakan angkat dari 0° ke 90° (bar dari rebah ke tegak)
-
-- Fold bar BELAKANG: identik, sisi belakang mold
-  Juga digerakkan 2x servo MG996R
-
-Total servo untuk folding: 4x MG996R
-```
-
-**Mengapa 2 servo per bar (bukan 1 servo center)?**
-- Bar panjang 50cm yang diangkat dari 1 titik tengah → ujung-ujung bar lentur (flex)
-- 2 servo di ujung kiri dan kanan bar → bar terangkat rata tanpa flex
-- Proven: mesin industri folder selalu drive dari 2 sisi untuk bar panjang
-
-**Alternatif lebih murah (jika 4 servo terlalu mahal)**:
-- 1 motor DC 12V dengan crank + 2 pushrod (proven di mesin carton folder sederhana)
-- Crank memutar 0° → 90° → motor berhenti (limit switch)
-- Biaya: motor DC Rp 65K vs 2 servo Rp 70K → hampir sama, tapi motor lebih torsi
-
-### 4.3 Press: Wide Press Plate (Full 5-Slot Coverage)
-
-**Proven di**: Mesin press tofu/tahu (paling mirip secara fungsi), buku/kertas press, flat panel laminator.
-
-```
-PRESS PLATE DESIGN (tampak depan):
-
-  ← 50.5cm →
-  ┌──────────────────────────────────────────────────────┐
-  │             Press Plate Aluminium 6061                │ ← satu plat panjang
-  │  [pad1] [pad2] [pad3] [pad4] [pad5]                  │   dengan 5 pad menonjol
-  └──────────────────────────────────────────────────────┘
-       ↓       ↓       ↓       ↓       ↓
-    [S1]    [S2]    [S3]    [S4]    [S5]
-
-OPSI 1 (RECOMMENDED): Plat datar panjang 48cm × 5cm
-  - Satu plat aluminium rata yang menekan SELURUH permukaan mold atas
-  - Simpel, mudah dibuat, merata
-  - Pastikan plat cukup kaku (min 5mm tebal) agar tidak melengkung saat tekan
-
-OPSI 2: 5 pad terpisah pada 1 gantry bar
-  - 5 pad aluminium 6cm × 5cm dipasang ke 1 bar horizontal
-  - Lebih mahal tapi menghindari tekanan ke dinding antar slot
-
-MEKANISME TURUN:
-  - 2x Lead Screw T8 (kiri dan kanan press plate) untuk tekanan merata
-  - 1 Motor DC Gearbox 12V (torsi besar) putar 1 shaft → 2 lead screw via chain/belt
-  - ATAU: 2 motor DC gearbox, sync via firmware (lebih simpel kawat, sedikit beda waktu)
-  - RECOMMENDED: 1 motor → 1 shaft → 2 lead screw via coupler (mekanis sync, tidak drift)
-```
-
-### 4.4 ESP32 WiFi Local Dashboard (tidak berubah dari v7)
-
-Library: `ESPAsyncWebServer` + `ArduinoJson`. Dashboard HTML real-time, no cloud.
+* **Dimensi Tiap Rongga Tempe:** Panjang 21.3 cm × Lebar 6.6 cm × Tinggi 3.6 cm (Standar ukuran balok tempe komersial ~150–200 gram).
+* **Sekat Pemisah Rongga:** Plat stainless tebal 1.0 cm.
+* **Margin Flange Kiri & Kanan:** Masing-masing 6.75 cm (tempat dudukan bantalan as poros Ø20mm dan bracket elektromagnet pengunci).
 
 ---
 
-## 5. DESAIN MEKANIK FRAME FINAL
+## 4. SISTEM MEKANIK & ELEKTRONIK
+
+### 4.1 Mekanisme Dosing Kedelai (6 Nozzle Y-Fork + Load Cell)
+- Corong hopper berbahan plat SS304 tebal 1.0mm dengan kapasitas 10–12 kg kedelai.
+- Bagian bawah corong dilengkapi 6 cabang nozzle pipa Y-Fork (pitch 8.5 cm) yang mengarah tepat ke masing-masing slot.
+- Pintu geser (*sliding gate*) digerakkan oleh Solenoid Push-Pull 12V (Relay GPIO 27).
+- Sensor Load Cell Bar-Type 20kg + Modul HX711 dipasang di bawah dudukan penimbang cetakan untuk memonitor berat kumulatif secara real-time hingga mencapai nilai setpoint.
+
+### 4.2 Mekanisme Pembalikan Rotari 180° (Flip Mold Ejection)
+- **Motor Penggerak:** Stepper Motor NEMA 23 (57BYG, arus 2.8A, torsi 1.9 Nm) dikendalikan driver microstepping TB6600 4A.
+- **Rasio Transmisi:** Timing Belt HTD3M menghubungkan pulley 20T (pada shaft motor Ø6.35mm) ke pulley 60T (pada as cetakan Ø20mm) → rasio reduksi 1:3.
+- **Kalkulasi Langkah (Steps):**
+  $$\text{Steps}_{180^\circ} = \frac{200 \text{ steps/rev} \times 8 \text{ microsteps} \times 3 \text{ (rasio)}}{2} = 2400 \text{ steps}$$
+- **Poros Rotasi:** As baja stainless steel pejal Ø20mm panjang 65cm, ditumpu oleh 2 unit Pillow/Flange Bearing UCFL 204 pada kedua sisi frame.
+- **Pengunci Tutup Elektromagnet:** Dua unit Solenoid Elektromagnet 12V (masing-masing tarikan 10 kg) terhubung ke Relay GPIO 13 untuk mengunci pelat penutup saat mold berputar.
+
+### 4.3 Mekanisme Pengepresan (Dual Lead Screw T8)
+- Pelat gantry penekan berbahan aluminium 5mm (panjang 59 cm) dengan 6 pad penekan.
+- Digerakkan oleh 2 buah Lead Screw T8 (pitch 2mm) pada sisi kiri dan kanan untuk menjamin tekanan yang rata tanpa distorsi torsi.
+- Motor penggerak: Motor DC Gearbox 12V 60RPM High Torque dengan driver L298N.
+- Dilengkapi 2 sakelar mikro pembatas (Limit Switch Atas GPIO 32 dan Limit Switch Bawah GPIO 33).
+
+### 4.4 Sistem Kendali IoT & Web Dashboard
+- ESP32 bertindak sebagai Web Server mandiri (menggunakan WiFi Access Point atau koneksi router lokal).
+- Antarmuka web modern (HTML5/CSS3/JavaScript) disimpan di memori internal SPIFFS.
+- Menampilkan status proses real-time, grafik berat, counter produksi harian & total seumur hidup mesin.
+- Menyediakan tombol kendali jarak jauh (START, STOP, Tare Timbangan, Toggle Magnet, dan Test Rotasi) serta form pengaturan target berat dan waktu tahan press.
+
+---
+
+## 5. DESAIN RANGKA MESIN (FRAME 90 CM)
 
 ```
-TAMPAK DEPAN (80cm lebar × 130cm tinggi):
+TAMPAK DEPAN RANGKA (Lebar 90cm × Tinggi 130cm × Kedalaman 40cm):
 
-┌─────────────────────────────────────────────────────────┐
-│             [HOPPER SS304 PANJANG 50.5cm]               │ h=130cm
-│             /─────────────────────────────\             │
-│            / ○  ○  ○  ○  ○  servo-gate    \            │
-├─────────────────────────────────────────────────────────┤ h=100cm
-│  [L-SCREW]  [PRESS PLATE PANJANG 50cm]  [R-SCREW]      │
-│      │              ↕                       │            │ h=85cm
-│    [MOTOR DC GEARBOX + SHAFT COUPLER]                   │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  [BAR BELAKANG]  [MOLD 5-SLOT DIAM]  [BAR DEPAN]       │ h=60cm
-│     servo↑       ═════════════════     servo↑           │
-│                  cetakan 50.5×24cm                      │
-│                  [1 LOAD CELL BAWAH]                    │
-├─────────────────────────────────────────────────────────┤ h=30cm
-│           [FRAME BESI HOLLOW 40×40mm]                   │
-│           [PANEL KONTROL - KANAN]                       │
-└─────────────────────────────────────────────────────────┘
-
-Lebar frame: 80cm | Tinggi: 130cm | Depth: 40cm
-```
-
-```
-TAMPAK SAMPING (40cm depth):
-
-              [HOPPER]
-              ╲_____/
-               |   |   ← nozzle gate (servo)
-               |   |
-         ──────────────── h=85cm  ← cross bar
-         [PRESS PLATE] ↕ (naik/turun)
-         ──────────────── h=65cm
-    ↗[FOLD BAR DEPAN]  [MOLD]  [FOLD BAR BELAKANG]↖
-         ──────────────── h=55cm  ← dudukan mold
-         [LOAD CELL]
-         ──────────────── h=30cm
+┌─────────────────────────────────────────────────────────────┐
+│                 [HOPPER SS304 6-NOZZLE]                     │ h = 130 cm
+│                 \─────────────────────────/                 │
+│                 / ○   ○   ○   ○   ○   ○ \  [SOLENOID GATE]  │
+├─────────────────────────────────────────────────────────────┤ h = 100 cm
+│  [LEAD SCREW]     [PELAT PRESS 6-PAD 59cm]     [LEAD SCREW] │
+│       │                      ↕                      │       │ h = 85 cm
+│     [BEARING]      [MOTOR DC GEARBOX 12V]        [BEARING]  │
+├─────────────────────────────────────────────────────────────┤
+│  [NEMA 23]                                                  │ h = 55 cm
+│     │ (Belt HTD3M)                                          │
+│  [PULLEY 60T] ─── [POROS AS Ø20mm + MOLD 6-SLOT] ───────────┤
+│  [BEARING FLANGE]                               [BEARING FL]│
+├─────────────────────────────────────────────────────────────┤ h = 30 cm
+│              [DUDUKAN ANCAK BAMBU TEMPE]                    │
+├─────────────────────────────────────────────────────────────┤ h = 15 cm
+│             [BOX PANEL KONTROL ELEKTRONIK]                  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 6. BILL OF MATERIALS v8 (REVISI)
+## 6. BILL OF MATERIALS (BOM) v9 FINAL
 
-### 6.1 Elektronik
+### 6.1 Elektronik & Kontrol (Online Tokopedia/Shopee) — Rp 801.000
+1. ESP32 DevKit V1 38-Pin — Rp 65.000
+2. Load Cell 20kg Bar-Type + Modul ADC HX711 — Rp 40.000
+3. Motor DC Gearbox 12V 60RPM High Torque — Rp 75.000
+4. Driver Motor L298N Dual H-Bridge — Rp 22.000
+5. Stepper Motor NEMA 23 57BYG (2.8A, 1.9Nm) — Rp 120.000
+6. Driver Stepper TB6600 4A — Rp 65.000
+7. Modul Relay 2-Channel 12V Optocoupler — Rp 18.000
+8. Solenoid Elektromagnet 12V 10kg (2 unit) — Rp 80.000
+9. Solenoid Push-Pull 12V (Pintu Geser Hopper) — Rp 55.000
+10. Power Supply Switching 12V 10A (120W) — Rp 90.000
+11. Buck Converter LM2596 Step-Down 12V ke 5V — Rp 12.000
+12. Micro Limit Switch Roller Lever (4 unit) — Rp 20.000
+13. Push Button Metal Momentary 16mm (3 unit) — Rp 24.000
+14. Buzzer Aktif 5V — Rp 5.000
+15. LED Indikator 5mm Merah & Hijau (5 unit) — Rp 5.000
+16. Kapasitor Elco 470μF 25V (5 unit) — Rp 10.000
+17. Resistor 10kΩ 1/4W (20 unit) — Rp 10.000
+18. Kabel Jumper M-F 40cm (2 set) — Rp 40.000
+19. Terminal Block PCB 2-Pin (20 unit) — Rp 20.000
+20. Kotak Panel ABS 200×150×100mm — Rp 25.000
 
-| No | Komponen                | Spesifikasi                       | Qty | Harga  | Total      |
-|----|-------------------------|-----------------------------------|-----|--------|------------|
-| 1  | ESP32 DevKit V1         | 38-pin, WiFi built-in             | 1   | 65K    | Rp 65.000  |
-| 2  | Load Cell 20kg + HX711  | 20kg (total 5 slot × ≤300g/slot = 1.5kg, pakai 20kg untuk presisi) | 1 | 35K | Rp 35.000 |
-| 3  | Servo MG996R            | Metal gear, 9.4kg.cm, 180°        | **5** | 35K  | **Rp 175.000** |
-|    | *(1 gate + 2 bar depan + 2 bar belakang)* | | | | |
-| 4  | Motor DC Gearbox 12V    | RPM 60, torsi ≥50kg.cm (lebih berat = 5 slot) | 1 | 75K | Rp 75.000 |
-| 5  | ~~NEMA17 Stepper~~      | **DIHILANGKAN**                   | 0   | -      | -          |
-| 6  | Driver L298N            | Dual H-bridge 2A/ch               | 1   | 22K    | Rp 22.000  |
-| 7  | ~~Driver A4988~~        | **DIHILANGKAN**                   | 0   | -      | -          |
-| 8  | HC-SR04 Ultrasonic      | Level sensor hopper               | 1   | 10K    | Rp 10.000  |
-| 9  | LCD 16×2 I2C            | HD44780 + PCF8574                 | 1   | 18K    | Rp 18.000  |
-| 10 | Limit Switch (micro)    | NC/NO, 5A                         | **4** | 5K   | Rp 20.000  |
-| 11 | Buzzer aktif 5V         | 95dB                              | 1   | 5K     | Rp 5.000   |
-| 12 | Push Button 16mm        | START / STOP / RESET              | 3   | 8K     | Rp 24.000  |
-| 13 | PSU 12V 10A             | Switching, 120W                   | 1   | 90K    | Rp 90.000  |
-| 14 | Buck Converter LM2596   | 12V→5V, 3A                        | 1   | 12K    | Rp 12.000  |
-| 15 | Kabel + terminal        | Berbagai ukuran                   | -   | 30K    | Rp 30.000  |
-| 16 | Kotak panel ABS         | 200×150×100mm                     | 1   | 25K    | Rp 25.000  |
-| 17 | LED 5mm (R/G/Y)         | Indikator                         | 3   | 1K     | Rp 3.000   |
-| **TOTAL ELEKTRONIK v8** | | | | | **Rp 609.000** |
+### 6.2 Bahan Mekanik & Toko Besi — Rp 1.281.000
+1. Besi Hollow 40×40mm tebal 2.0mm (12 meter) — Rp 600.000
+2. Poros As Baja Stainless Ø20mm panjang 65cm — Rp 60.000
+3. Plat Aluminium 5mm (60×15cm) untuk Press Plate — Rp 130.000
+4. Plat Aluminium 3mm (70×30cm) untuk Gate & Tutup — Rp 70.000
+5. Lead Screw T8 300mm + Brass Nut (2 unit) — Rp 90.000
+6. Timing Belt HTD3M lebar 15mm panjang ~700mm — Rp 35.000
+7. Pulley 20T HTD3M Bore 6.35mm — Rp 20.000
+8. Pulley 60T HTD3M Bore 20mm — Rp 40.000
+9. Bearing Flange UCFL 204 (20mm) (2 unit) — Rp 50.000
+10. Bearing 608ZZ Tumpuan Lead Screw (4 unit) — Rp 20.000
+11. Shaft Coupler Fleksibel Motor ke Lead Screw — Rp 35.000
+12. Engsel Baja 2 Inchi untuk Tutup Slot (12 unit) — Rp 36.000
+13. Baut, Mur, dan Ring Set Komplit — Rp 50.000
+14. Kaki Karet Peredam Rangka M10 (4 unit) — Rp 32.000
+15. Cat Epoxy Besi Food-Safe + Thinner — Rp 43.000
 
-### 6.2 Mekanik & Struktural
+### 6.3 Bengkel Las & Fabrikasi Custom SS304 — Rp 1.175.000
+1. Corong Hopper Kedelai SS304 Kapasitas 12 kg — Rp 350.000
+2. Nozzle Pipa Cabang Y-Fork SS304 (6 Lubang) — Rp 175.000
+3. Cetakan Tempe 6-Slot SS304 (59.1×24×3.6cm) — Rp 250.000
+4. Jasa Pengelasan & Perakitan Rangka Mesin — Rp 400.000
 
-| No | Komponen                | Spesifikasi                       | Qty | Harga  | Total      |
-|----|-------------------------|-----------------------------------|-----|--------|------------|
-| 1  | Besi Hollow 40×40mm     | Tebal 2mm, total ~8m              | -   | -      | Rp 600.000 |
-| 2  | ~~Linear Rail MGR12~~   | **DIHILANGKAN**                   | 0   | -      | -          |
-| 3  | Lead Screw T8 + Nut     | 300mm, pitch 2mm                  | **2** | 45K  | **Rp 90.000** |
-| 4  | Shaft coupler + pulley  | Coupler motor ke 2 lead screw    | 1   | 35K    | Rp 35.000  |
-| 5  | ~~GT2 Belt + Pulley~~   | **DIHILANGKAN**                   | 0   | -      | -          |
-| 6  | Bearing 608ZZ           | Lead screw support (4) + fold bar pivot (4) | 8 | 5K | Rp 40.000 |
-| 7  | Aluminium profile 20×20mm | Fold bar × 2 batang × 55cm    | 2   | 25K    | Rp 50.000  |
-| 8  | Aluminium plate 5mm     | Press plate 50cm × 5cm           | 1   | 120K   | Rp 120.000 |
-| 9  | Aluminium plate 3mm     | Gate hopper + arm bracket         | 1   | 60K    | Rp 60.000  |
-| 10 | Hopper SS304 (custom)   | Panjang 50.5cm, lebar 20cm, 5 lubang Ø35mm | 1 | 250K | Rp 250.000 |
-| 11 | Stainless rod/pivot     | As pivot fold bar kiri+kanan (Ø8mm × 55cm) | 2 | 20K | Rp 40.000 |
-| 12 | Baut + mur set          | M5, M3, berbagai ukuran           | -   | 45K    | Rp 45.000  |
-| 13 | Kaki karet M10          | Anti-slip                         | 4   | 8K     | Rp 32.000  |
-| 14 | Cat epoxy food-grade    | Primer + topcoat                  | 1   | 45K    | Rp 45.000  |
-| 15 | Ongkos las + fabrikasi  | Frame + bracket + pivot           | -   | -      | Rp 400.000 |
-| **TOTAL MEKANIK v8** | | | | | **Rp 1.807.000** |
-
-### 6.3 Total Biaya v8
-
-| Kategori              | v7 (sequential) | v8 (simultan) | Selisih |
-|-----------------------|-----------------|---------------|---------|
-| Elektronik            | Rp 625.000      | Rp 609.000    | -16K    |
-| Mekanik + Fabrikasi   | Rp 1.603.000    | Rp 1.807.000  | +204K   |
-| Buffer 10%            | Rp 223.000      | Rp 242.000    | +19K    |
-| **GRAND TOTAL**       | **Rp 2.451.000** | **Rp 2.658.000** | **+207K** |
-
-> Sedikit lebih mahal (~Rp 207K) tapi **lebih cepat 3× lipat** (60 detik vs 3 menit per papan).  
-> Nilai lebih: desain lebih simpel (tidak ada sliding mechanism), lebih reliable, lebih mudah dirawat.
+### 6.4 Rekapitulasi Anggaran Proyek
+* Subtotal Belanja Online: Rp 801.000
+* Subtotal Toko Besi: Rp 1.281.000
+* Subtotal Bengkel Custom: Rp 1.175.000
+* Biaya Cadangan / Buffer 10%: Rp 326.000
+* **TOTAL INVESTASI:** **~Rp 3.583.000**
 
 ---
 
-## 7. PIN MAPPING ESP32 (REVISI v8)
+## 7. PIN MAPPING ESP32 (v9 FINAL LEAN)
 
-```
-GPIO │ Komponen                    │ Keterangan
-─────┼──────────────────────────────┼──────────────────────────────────
-  4  │ HX711 DOUT                  │ Load cell data
-  5  │ HX711 SCK                   │ Load cell clock
- 18  │ HC-SR04 TRIG                │ Ultrasonic trigger (level hopper)
- 19  │ HC-SR04 ECHO                │ Ultrasonic echo
- 21  │ I2C SDA (LCD)               │ LCD 16×2 data
- 22  │ I2C SCL (LCD)               │ LCD 16×2 clock
- 25  │ L298N IN1 (press)           │ Motor press TURUN
- 26  │ L298N IN2 (press)           │ Motor press NAIK
- 27  │ Servo GATE hopper           │ PWM gate dosing (buka/tutup)
- 33  │ Servo FOLD BAR DEPAN KIRI   │ PWM fold bar depan kiri
- 32  │ Servo FOLD BAR DEPAN KANAN  │ PWM fold bar depan kanan
- 14  │ Servo FOLD BAR BELAKANG KIRI│ PWM fold bar belakang kiri
- 12  │ Servo FOLD BAR BELAKANG KANAN│ PWM fold bar belakang kanan
- 35  │ Limit SW PRESS BAWAH        │ INPUT_PULLUP eksternal 10kΩ
- 34  │ Limit SW PRESS ATAS         │ INPUT_PULLUP eksternal 10kΩ
-  0  │ Tombol START                │ INPUT_PULLUP, LOW=pressed
- 15  │ Tombol STOP/PAUSE           │ INPUT_PULLUP, LOW=pressed
- 16  │ Tombol RESET                │ INPUT_PULLUP, LOW=pressed
-  2  │ LED onboard (biru)          │ Heartbeat
- 23  │ Buzzer aktif                │ HIGH=bunyi
-
-CATATAN:
-- GPIO 34, 35 = INPUT ONLY → pullup eksternal 10kΩ ke 3.3V WAJIB
-- Semua 4 servo fold bar: sync PWM output, gerak bersamaan
-- Load cell mengukur TOTAL berat (target = 5 × berat_per_slot)
-```
+| Pin GPIO | Tipe I/O | Komponen Terhubung | Fungsi & Keterangan |
+|:--:|:--:|---|---|
+| **GPIO 4** | Input | HX711 DOUT | Jalur data digital pembacaan sensor Load Cell |
+| **GPIO 5** | Output | HX711 SCK | Sinyal clock pewaktuan konverter HX711 |
+| **GPIO 12** | Output | TB6600 STEP | Pulsa langkah rotasi Stepper NEMA 23 |
+| **GPIO 13** | Output | Relay Elektromagnet | Mengaktifkan kunci magnet tutup cetakan |
+| **GPIO 14** | Output | TB6600 DIR | Arah putaran Stepper NEMA 23 (180° / Balik 0°) |
+| **GPIO 25** | Output | L298N IN1 | Kendali arah Motor DC press (TURUN menekan) |
+| **GPIO 26** | Output | L298N IN2 | Kendali arah Motor DC press (NAIK kembali) |
+| **GPIO 27** | Output | Relay Gate Solenoid | Membuka/menutup pintu geser corong kedelai |
+| **GPIO 32** | Input | Limit Switch Atas | Batas acuan awal (*homing*) & batas atas press |
+| **GPIO 33** | Input | Limit Switch Bawah | Batas akhir tekanan pengepresan tempe |
+| **GPIO 34** | Input | Push Button START | Tombol fisik memulai siklus produksi (*Pull-up 10k*) |
+| **GPIO 35** | Input | Push Button STOP | Tombol fisik jeda darurat (*Emergency Stop*) |
+| **GPIO 2** | Output | LED Hijau (OK) | Indikator standby (kedip) / proses aktif (ON) |
+| **GPIO 15** | Output | LED Merah (Alarm) | Indikator kegagalan mekanik atau timeout |
+| **GPIO 23** | Output | Buzzer Aktif 5V | Notifikasi suara siklus selesai (3× beep) / alarm |
+| *GPIO 18* | Spare | *(Bebas)* | Sebelumnya untuk HC-SR04 TRIG (kini kosong) |
+| *GPIO 19* | Spare | *(Bebas)* | Sebelumnya untuk HC-SR04 ECHO (kini kosong) |
+| *GPIO 21* | Spare | *(Bebas)* | Sebelumnya untuk LCD SDA (kini kosong) |
+| *GPIO 22* | Spare | *(Bebas)* | Sebelumnya untuk LCD SCL (kini kosong) |
 
 ---
 
-## 8. STATE MACHINE (REVISI v8 — jauh lebih simpel!)
+## 8. FINITE STATE MACHINE (FSM v9)
 
 ```
-[POWER ON] → HOMING (press plate ke atas) → IDLE
-
-IDLE:
-  LCD: "PASANG 5 PLASTIK, TEKAN START"
-  Operator pasang 5 plastik ke 5 slot
-  Tekan START
-  ↓
-CEK_HOPPER:
-  HC-SR04 ukur level kedelai
-  JIKA kosong → ALARM_HOPPER
-  ↓
-DOSING (semua 5 slot sekaligus):
-  Tare load cell (berat mold + plastik = 0 referensi)
-  Gate servo buka → kedelai mengalir ke semua 5 slot bersamaan
-  HX711 baca berat TOTAL setiap 50ms
-  Target total = 5 × target_per_slot (default: 5 × 200g = 1000g)
-  Saat total ≥ (target - offset) → gate tutup
-  Tunggu 500ms settling → validasi total berat
-  ↓
-FOLDING (semua 5 slot sekaligus):
-  4 servo fold bar gerak 0° → 90° bersamaan (500ms)
-  Tunggu 300ms (stabilize)
-  ↓
-PRESSING (semua 5 slot sekaligus):
-  Motor press TURUN (L298N forward) sampai limit SW bawah
-  Tahan 1500ms (lebih lama karena 5 slot)
-  4 servo fold bar kembali 90° → 0° (arm keluar, 500ms)
-  Tunggu 200ms (arm clear)
-  Motor press NAIK (L298N backward) sampai limit SW atas
-  ↓
-PAPAN_PENUH:
-  Buzzer 3x panjang
-  LCD: "PAPAN PENUH - BALIK KE ANCAK"
-  Dashboard push: "Batch #N selesai, Total: Xg"
-  Tunggu operator angkat mold → tekan START lagi
-  batch_counter++
-  → IDLE
-```
-
-**Catatan**: Tidak ada lagi state GESER, tidak ada stepper, tidak ada homing ke posisi slot. Jauh lebih simpel!
-
----
-
-## 9. TANTANGAN DESAIN & SOLUSI
-
-### 9.1 Distribusi Kedelai Tidak Merata Antar Slot
-
-**Masalah**: Kedelai di hopper mungkin lebih banyak ke slot tengah (gravitasi, pressure).  
-**Solusi**:
-- Desain hopper dengan pemisah internal (divider plate di dalam hopper)
-- Setiap "chamber" hopper terpisah untuk 1 slot → flow lebih terkontrol
-- Ukuran lubang nozzle dapat di-adjust: lubang tengah lebih kecil, ujung lebih besar
-- Kalibrasi awal: ukur berat masing-masing slot dengan scale manual (bukan load cell mesin)
-
-### 9.2 Press Plate Lentur di Tengah (Span 50cm)
-
-**Masalah**: Plat aluminium 50cm panjang → bisa melengkung/melentur saat tekan.  
-**Solusi**:
-- Gunakan plat tebal: **min 8mm** atau **profil C-channel aluminium** (lebih kaku)
-- Atau tambah support bar di tengah plat (pantograph linkage dari 2 lead screw)
-- 2 lead screw (kiri dan kanan) → tekanan merata, tidak ada momen lentur di tengah
-
-### 9.3 Fold Bar Lentur (Span 50cm)
-
-**Masalah**: Fold bar 50cm diangkat 2 servo di ujung → bar bisa flex di tengah.  
-**Solusi**:
-- Pilih material yang kaku: **besi kotak 20×20mm** (bukan aluminium tipis)
-- ATAU tambah 1 titik support di tengah bar (servo ketiga per bar) → tapi jadi 6 servo total
-- ATAU desain bar dengan **bracing diagonal** di tengah
-- Rekomendasi: **besi hollow 20×20mm tebal 2mm** untuk fold bar → kaku, ringan, murah
-
-### 9.4 Sinkronisasi Fold Bar Depan & Belakang
-
-**Masalah**: Bar depan dan belakang harus lipat bersamaan, tidak boleh satu lebih dulu.  
-**Solusi**: Firmware: `servoFoldDepanKiri.write(angle); servoFoldDepanKanan.write(angle); servoFoldBelakangKiri.write(angle); servoFoldBelakangKanan.write(angle);` → panggil bersamaan dalam 1 blok kode → ESP32 update semua PWM dalam 1 loop iteration → sync otomatis.
-
----
-
-## 10. DIMENSI MEKANIK UNTUK TUKANG LAS (v8)
-
-```
-FRAME UTAMA (Besi Hollow 40×40mm, tebal 2mm):
-
-KAKI VERTIKAL: 4 buah × 100cm
-Jarak kaki kiri-kanan: 80cm
-Jarak kaki depan-belakang: 40cm
-
-CROSS BAR BAWAH (h=30cm): dudukan mold + load cell
-  2 batang 80cm (kiri-kanan) + 2 batang 40cm (depan-belakang)
-  Di tengahnya: plat besi untuk dudukan load cell + mold
-  
-CROSS BAR TENGAH (h=55cm): dudukan pivot fold bar
-  2 batang 80cm (kiri-kanan)
-  Bracket pivot fold bar: las di ujung depan dan belakang
-
-CROSS BAR ATAS (h=85cm): dudukan press mechanism
-  2 batang 80cm (kiri-kanan)
-  Plate motor press: las di tengah (di antara 2 lead screw)
-  Bracket lead screw atas: 2 titik (x=15cm dan x=65cm dari kiri)
-
-TOP FRAME (h=130cm): dudukan hopper
-  2 batang 80cm (kiri-kanan)
-  Bracket hopper: 2 titik kiri-kanan
-
-PIVOT FOLD BAR:
-  As besi Ø8mm × 55cm panjang
-  Dipasang horizontal di sisi depan (y=0) dan belakang (y=40cm) mold
-  Tinggi pivot: h=58cm (sedikit di atas tepi mold ~55cm)
-  Fold bar besi hollow 20×20mm 55cm dipasang ke as pivot
-  Servo MG996R bracket di ujung kiri dan kanan as → angkat bar via lengan 8cm
+[POWER ON]
+   │
+   ▼
+[ST_HOMING] ────► Motor DC naik sampai Limit Switch Atas aktif
+   │
+   ▼
+[ST_IDLE]   ◄──── LED Hijau berkedip pelan (Standby). Menunggu tombol START.
+   │
+   ├─► Operator tekan START (atau via Web Dashboard)
+   ▼
+[ST_DOSING] ────► Tare Load Cell. Relay Gate buka. Kedelai mengalir ke 6 slot.
+   │              HX711 pantau berat kumulatif hingga mencapai target (misal 900g).
+   │              Relay Gate tutup seketika.
+   ▼
+[ST_PRESSING] ──► Motor DC turun hingga Limit Switch Bawah. Tahan selama 5 detik.
+   │
+   ▼
+[ST_LIFT_OFF] ──► Motor DC naik kembali hingga Limit Switch Atas.
+   │
+   ▼
+[ST_LOCK_LID] ──► Relay Elektromagnet aktif menahan tutup cetakan rapat-rapat.
+   │
+   ▼
+[ST_ROTATE_MOLD]► Stepper NEMA 23 memutar cetakan 180° (2400 step, pergerakan halus).
+   │              Posisi cetakan terbalik tepat di atas ancak bambu.
+   ▼
+[ST_UNLOCK_LID] ─► Elektromagnet dimatikan. Tempe lepas gravitasi ke atas ancak.
+   │              Buzzer bunyi 3× & LED Hijau berkedip cepat.
+   ▼
+[ST_RETURN_MOLD]► NEMA 23 memutar balik cetakan ke posisi awal 0°.
+   │
+   ▼
+[ST_SELESAI] ───► Counter harian & counter total bertambah (+1 batch / +6 tempe).
+   │              Kembali ke status ST_IDLE.
 ```
 
 ---
 
-## 11. TIMELINE IMPLEMENTASI (tidak berubah dari v7)
+## 9. CHECKLIST VALIDASI SEBELUM PRODUKSI
 
-### Sprint 0 (Minggu 0): Procurement
-- Order elektronik, beli besi, pesan hopper SS304 custom (panjang 50.5cm)
-
-### Sprint 1 (Minggu 1–2): Mekanik
-- Frame, pivot fold bar, lead screw press, dudukan mold + load cell
-
-### Sprint 2 (Minggu 2–3): Elektronik Unit Test
-- Test HX711 (total weight), 4 servo fold bar, motor press, LCD, buzzer
-
-### Sprint 3 (Minggu 3–4): Firmware
-- State machine v8 (tanpa stepper), web dashboard
-
-### Sprint 4 (Minggu 4–5): System Test
-- Dry run → test dengan kedelai → kalibrasi distribusi per slot
-
-### Sprint 5 (Minggu 5+): Produksi
-- Target: ≥50 papan/jam (jauh lebih tinggi dari v7!)
-
----
-
-## 12. CHECKLIST SEBELUM PRODUKSI
-
-- [ ] Load cell baca total berat 5 slot dengan akurasi ±15g total (±3g/slot)
-- [ ] 4 fold bar servo sync: semua lipat plastik bersamaan, tidak ada yang lebih lambat
-- [ ] Press plate turun merata di 5 slot (tidak miring kiri-kanan)
-- [ ] Distribusi kedelai: setiap slot ±10-15% dari rata-rata (cek dengan timbang manual)
-- [ ] Hopper gate buka/tutup mulus untuk 5 lubang sekaligus
-- [ ] STOP button interrupt langsung berfungsi
-- [ ] WiFi dashboard akses dari HP
-- [ ] Cycle time papan: < 90 detik (target 60 detik)
-
----
-
-*Revisi: v8 — 13 September 2026 — Arsitektur 5 slot simultan, tanpa sliding mechanism*  
-*Selanjutnya: Gambar desain multi-angle (pending quota reset) + firmware skeleton v8*
+- [ ] Beban timbangan Load Cell terkalibrasi presisi dengan deviasi < ±5 gram pada rentang 500–1000g.
+- [ ] Pintu geser (*sliding gate*) membuka lancar tanpa tersangkut butiran kedelai dan menutup rapat.
+- [ ] Aliran kedelai dari 6 pipa nozzle Y-Fork terbagi rata ke seluruh rongga slot cetakan.
+- [ ] Tekanan pelat press merata di seluruh 6 slot dan berhenti tepat saat limit switch bawah tertekan.
+- [ ] Elektromagnet mampu menahan penutup cetakan saat posisi rotasi berada di sudut 90°.
+- [ ] Stepper NEMA 23 berputar tepat 180° tanpa kehilangan langkah (*loss of step*) dan kembali ke 0°.
+- [ ] Tempe beserta plastik pembungkus terlepas mulus ke atas alas ancak bambu.
+- [ ] Tombol STOP darurat langsung mematikan katup solenoid dan mengangkat motor press ke posisi aman.
+- [ ] Web Dashboard via WiFi ESP32 dapat diakses dari browser smartphone dengan respons latensi rendah.

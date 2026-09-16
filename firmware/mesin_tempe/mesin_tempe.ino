@@ -1,38 +1,43 @@
 /*==========================================================
-  MESIN PENCETAK TEMPE OTOMATIS v1.0
-  ──────────────────────────────────
-  Hardware : ESP32 DevKit V1
-  Cetakan  : 6 slot, press simultan
-  Frame    : Tinggi 3.6 cm (Lift-Off Frame)
-  Aktuator : Motor DC 12V + Gearbox + Lead Screw M10
-  Sensor   : Load Cell 10kg (HX711), HC-SR04, Limit SW x2
-  UI       : LCD 16x2 I2C + Tombol + LED + Buzzer
-  Dashboard: Web browser via WiFi (SPIFFS)
-  ──────────────────────────────────
+  MESIN PENCETAK TEMPE OTOMATIS v9.0 (LEAN ARSITEKTUR)
+  ──────────────────────────────────────────────────
+  Hardware : ESP32 DevKit V1 (38-pin)
+  Cetakan  : 6 slot simultan (lebar mold 59.1 cm)
+  Rotasi   : NEMA23 + Driver TB6600 + Timing Belt HTD3M 1:3 (2400 steps = 180°)
+  Pengunci : Solenoid Elektromagnet 12V x2 (Relay GPIO 13)
+  Press    : Motor DC 12V + Driver L298N + Dual Lead Screw T8
+  Dosing   : Solenoid Gate 12V (Relay GPIO 27) + Load Cell 20kg (HX711)
+  UI       : Web Dashboard WiFi (ESP32) + LED Hijau/Merah + Buzzer + Tombol START/STOP
+  ──────────────────────────────────────────────────
   PIN MAP:
-  GPIO 4  → HX711 DOUT        GPIO 25 → Motor IN1 (L298N)
-  GPIO 5  → HX711 SCK         GPIO 26 → Motor IN2 (L298N)
-  GPIO 18 → HC-SR04 TRIG      GPIO 27 → Relay Gate Hopper
-  GPIO 19 → HC-SR04 ECHO      GPIO 32 → Limit Switch ATAS
-  GPIO 21 → LCD SDA (I2C)     GPIO 33 → Limit Switch BAWAH
-  GPIO 22 → LCD SCL (I2C)     GPIO 34 → Tombol START
-                               GPIO 35 → Tombol STOP
-                               GPIO 2  → LED Hijau (OK)
-                               GPIO 15 → LED Merah (ALARM)
-                               GPIO 23 → Buzzer
+  GPIO 4  → HX711 DOUT          GPIO 25 → Motor Press IN1 (L298N)
+  GPIO 5  → HX711 SCK           GPIO 26 → Motor Press IN2 (L298N)
+  GPIO 12 → NEMA23 STEP         GPIO 27 → Relay Gate Solenoid (Hopper)
+  GPIO 14 → NEMA23 DIR          GPIO 32 → Limit Switch ATAS
+  GPIO 13 → Relay Elektromagnet GPIO 33 → Limit Switch BAWAH
+  GPIO 2  → LED Hijau (OK/RUN)  GPIO 34 → Tombol Fisik START
+  GPIO 15 → LED Merah (ALARM)   GPIO 35 → Tombol Fisik STOP
+  GPIO 23 → Buzzer Aktif 5V
+  Bebas   : GPIO 18, 19, 21, 22 (Spare pin)
 ==========================================================*/
 
 // ════════════════════════════════════════════════════════
-// SECTION 1 — Library
+// SECTION 1 — Library & Feature Flags
 // ════════════════════════════════════════════════════════
+#define USE_LCD      0       // 0 = Tanpa LCD (Web Dashboard WiFi), 1 = dengan LCD 16x2
+#define USE_HCSR04   0       // 0 = Tanpa Ultrasonik (pantau visual), 1 = dengan HC-SR04
+
 #include <WiFi.h>
 #include <WebServer.h>
 #include <SPIFFS.h>
 #include <HX711.h>
 #include <Wire.h>
+#if USE_LCD
 #include <LiquidCrystal_I2C.h>
+#endif
 #include <Preferences.h>
 #include <ArduinoJson.h>
+#include <AccelStepper.h>
 
 // ════════════════════════════════════════════════════════
 // SECTION 2 — Konfigurasi & Pin Mapping
@@ -45,10 +50,6 @@ const char* WIFI_PASSWORD = "PASSWORD_WIFI_KAMU"; // ← ganti
 // ── Pin Mapping ───────────────────────────────────────
 #define PIN_HX711_DOUT   4
 #define PIN_HX711_SCK    5
-#define PIN_TRIG        18
-#define PIN_ECHO        19
-#define PIN_SDA         21
-#define PIN_SCL         22
 #define PIN_MOTOR_IN1   25
 #define PIN_MOTOR_IN2   26
 #define PIN_RELAY_GATE  27
@@ -59,10 +60,16 @@ const char* WIFI_PASSWORD = "PASSWORD_WIFI_KAMU"; // ← ganti
 #define PIN_LED_OK       2
 #define PIN_LED_ALARM   15
 #define PIN_BUZZER      23
+#define PIN_RELAY_MAGNET 13
+#define PIN_STEPPER_DIR 14
+#define PIN_STEPPER_STEP 12
 
-// ── Konstanta Mekanik (JANGAN UBAH) ───────────────────
+// ── Konstanta Mekanik & Rotasi (JANGAN UBAH) ──────────
 #define SLOT_COUNT           6       // Jumlah slot cetakan
 #define TINGGI_FRAME_CM      3.6     // Tinggi frame cetakan (cm)
+#define STEPS_180DEG         2400    // 200 step × 8 microstep × 3 gear_ratio / 2 = 2400 step (180°)
+#define NEMA23_MAX_SPEED     800.0   // step/detik
+#define NEMA23_ACCELERATION  400.0   // step/detik²
 #define TIMEOUT_HOMING_MS    15000   // Max waktu homing (ms)
 #define TIMEOUT_PRESSING_MS  25000   // Max waktu press turun (ms)
 #define TIMEOUT_DOSING_MS    90000   // Max waktu dosing (ms)
@@ -86,6 +93,10 @@ enum State {
   ST_DOSING,        // Mengisi kedelai ke cetakan
   ST_PRESSING,      // Press turun + tahan
   ST_LIFT_OFF,      // Press + frame naik → tempe bebas di ancak
+  ST_LOCK_LID,      // Kunci tutup cetakan dengan elektromagnet
+  ST_ROTATE_MOLD,   // Putar cetakan 180 derajat untuk membalik
+  ST_UNLOCK_LID,    // Buka kunci elektromagnet
+  ST_RETURN_MOLD,   // Putar cetakan kembali ke posisi semula (0 derajat)
   ST_SELESAI,       // Siklus selesai, counter update
   ST_ALARM_HOPPER,  // Kedelai hampir habis
   ST_ALARM_ERROR    // Error mekanik (timeout)
@@ -113,9 +124,14 @@ bool          ledBlinkState    = false;
 
 // Objects
 HX711             scale;
+#if USE_LCD
 LiquidCrystal_I2C lcd(0x27, 16, 2);
+#endif
 WebServer         server(80);
 Preferences       prefs;
+AccelStepper      stepper(AccelStepper::DRIVER, PIN_STEPPER_STEP, PIN_STEPPER_DIR);
+
+bool magnetActive = false;
 
 // ════════════════════════════════════════════════════════
 // SECTION 4 — Fungsi Sensor
@@ -128,12 +144,16 @@ float bacaBerat() {
 }
 
 float bacaHopper() {
+#if USE_HCSR04
   digitalWrite(PIN_TRIG, LOW);  delayMicroseconds(2);
   digitalWrite(PIN_TRIG, HIGH); delayMicroseconds(10);
   digitalWrite(PIN_TRIG, LOW);
   long dur = pulseIn(PIN_ECHO, HIGH, 30000UL);
   if (dur == 0) return 999.0; // tidak ada respons = hopper kosong
   return (dur * 0.0343f) / 2.0f;
+#else
+  return 5.0f; // Mode visual: selalu normal (tidak memicu alarm)
+#endif
 }
 
 bool limitAtas()  { return digitalRead(PIN_LIMIT_ATAS)  == LOW; }
@@ -165,6 +185,11 @@ void motorStop()  { digitalWrite(PIN_MOTOR_IN1, LOW);  digitalWrite(PIN_MOTOR_IN
 void bukaGate()   { digitalWrite(PIN_RELAY_GATE, HIGH); }
 void tutupGate()  { digitalWrite(PIN_RELAY_GATE, LOW);  }
 
+void setMagnet(bool active) {
+  magnetActive = active;
+  digitalWrite(PIN_RELAY_MAGNET, active ? HIGH : LOW);
+}
+
 void setLED(bool ok, bool alarm) {
   digitalWrite(PIN_LED_OK,    ok    ? HIGH : LOW);
   digitalWrite(PIN_LED_ALARM, alarm ? HIGH : LOW);
@@ -178,9 +203,18 @@ void buzzer(int kali, int durMs = 150, int jedaMs = 100) {
 }
 
 void lcdPrint(const String& b1, const String& b2) {
+#if USE_LCD
   lcd.clear();
   lcd.setCursor(0, 0); lcd.print(b1.substring(0, 16));
   lcd.setCursor(0, 1); lcd.print(b2.substring(0, 16));
+#else
+  static String lastB1 = "", lastB2 = "";
+  if (b1 != lastB1 || b2 != lastB2) {
+    Serial.printf("[DISPLAY] %s | %s\n", b1.c_str(), b2.c_str());
+    lastB1 = b1;
+    lastB2 = b2;
+  }
+#endif
 }
 
 String progressBar(float val, float maxVal, int len = 10) {
@@ -197,7 +231,8 @@ String progressBar(float val, float maxVal, int len = 10) {
 void changeState(State next) {
   const char* names[] = {
     "HOMING","IDLE","CEK_HOPPER","TUNGGU_SIAP",
-    "DOSING","PRESSING","LIFT_OFF","SELESAI",
+    "DOSING","PRESSING","LIFT_OFF",
+    "LOCK_LID","ROTATE_MOLD","UNLOCK_LID","RETURN_MOLD","SELESAI",
     "ALARM_HOPPER","ALARM_ERROR"
   };
   currentState = next;
@@ -239,7 +274,13 @@ void handleIdle() {
     : "Mode: Manual";
   lcdPrint("READY - START", mode);
 
-  if (tombolStart()) changeState(ST_CEK_HOPPER);
+  if (tombolStart()) {
+#if USE_HCSR04
+    changeState(ST_CEK_HOPPER);
+#else
+    changeState(ST_DOSING);
+#endif
+  }
 }
 
 // ── CEK_HOPPER ────────────────────────────────────────
@@ -355,6 +396,60 @@ void handleLiftOff() {
     delay(10);
   }
   motorStop();
+  changeState(ST_LOCK_LID); // Lanjut ke penguncian tutup sebelum putar
+}
+
+// ── LOCK_LID ──────────────────────────────────────────
+void handleLockLid() {
+  lcdPrint("Mengunci Tutup", "Magnet Aktif...");
+  setMagnet(true);
+  delay(1000); // Tunggu magnet mengunci kuat
+  changeState(ST_ROTATE_MOLD);
+}
+
+// ── ROTATE_MOLD ───────────────────────────────────────
+void handleRotateMold() {
+  lcdPrint("Memutar Cetakan", "Awas menjauh...");
+  stepper.enableOutputs();
+  // Asumsi putaran 180 derajat (perlu disesuaikan dengan rasio pulley dan microstepping)
+  // Contoh: 200 step/rev * 8 microstep * 3 (gear ratio 1:3) / 2 (180 deg) = 2400 steps
+  long targetPos = 2400; 
+  stepper.moveTo(targetPos); 
+  
+  while (stepper.distanceToGo() != 0) {
+    stepper.run();
+    server.handleClient();
+    if (tombolStop()) { stepper.stop(); changeState(ST_ALARM_ERROR); return; }
+  }
+  changeState(ST_UNLOCK_LID);
+}
+
+// ── UNLOCK_LID ────────────────────────────────────────
+void handleUnlockLid() {
+  lcdPrint("Buka Tutup", "Ambil Tempe...");
+  setMagnet(false);
+  buzzer(3, 200, 100);
+  
+  // Tunggu operator mengambil cetakan / tempe jatuh ke ancak
+  lcdPrint("Tempe Selesai", "START = Lanjut");
+  while (true) {
+    server.handleClient();
+    if (tombolStart()) { changeState(ST_RETURN_MOLD); return; }
+    if (tombolStop())  { changeState(ST_HOMING); return; }
+    delay(50);
+  }
+}
+
+// ── RETURN_MOLD ───────────────────────────────────────
+void handleReturnMold() {
+  lcdPrint("Posisi Semula...", "");
+  stepper.moveTo(0);
+  while (stepper.distanceToGo() != 0) {
+    stepper.run();
+    server.handleClient();
+    if (tombolStop()) { stepper.stop(); changeState(ST_ALARM_ERROR); return; }
+  }
+  stepper.disableOutputs(); // Matikan arus agar motor tidak panas
   changeState(ST_SELESAI);
 }
 
@@ -415,6 +510,10 @@ void runFSM() {
     case ST_DOSING:       handleDosing();      break;
     case ST_PRESSING:     handlePressing();    break;
     case ST_LIFT_OFF:     handleLiftOff();     break;
+    case ST_LOCK_LID:     handleLockLid();     break;
+    case ST_ROTATE_MOLD:  handleRotateMold();  break;
+    case ST_UNLOCK_LID:   handleUnlockLid();   break;
+    case ST_RETURN_MOLD:  handleReturnMold();  break;
     case ST_SELESAI:      handleSelesai();     break;
     case ST_ALARM_HOPPER: handleAlarmHopper(); break;
     case ST_ALARM_ERROR:  handleAlarmError();  break;
@@ -437,6 +536,8 @@ void handleApiStatus() {
   doc["slotCount"]      = SLOT_COUNT;
   doc["limitAtas"]      = limitAtas();
   doc["limitBawah"]     = limitBawah();
+  doc["magnetActive"]   = magnetActive;
+  doc["stepperPos"]     = stepper.currentPosition();
   doc["modeDosing"]     = (beratTarget > 0) ? "otomatis" : "manual";
   doc["ipAddress"]      = WiFi.localIP().toString();
   String out; serializeJson(doc, out);
@@ -454,13 +555,26 @@ void handleApiControl() {
   String msg = "ok";
 
   if (cmd == "START") {
-    if (currentState == ST_IDLE) changeState(ST_CEK_HOPPER);
+    if (currentState == ST_IDLE) {
+#if USE_HCSR04
+      changeState(ST_CEK_HOPPER);
+#else
+      changeState(ST_DOSING);
+#endif
+    }
     else msg = "Mesin sedang berjalan";
   } else if (cmd == "STOP") {
     tutupGate(); motorStop(); changeState(ST_HOMING);
   } else if (cmd == "RESET_HARI") {
     counterHariIni = 0; prefs.putInt("counterHari", 0);
     msg = "Counter harian direset";
+  } else if (cmd == "TOGGLE_MAGNET") {
+    setMagnet(!magnetActive);
+    msg = magnetActive ? "Magnet Aktif" : "Magnet Mati";
+  } else if (cmd == "ROTATE_TEST") {
+    stepper.enableOutputs();
+    stepper.moveTo(stepper.currentPosition() == 0 ? 2400 : 0);
+    msg = "Rotasi dijalankan (Non-blocking)";
   } else if (cmd == "RESTART") {
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "application/json", "{\"ok\":true}");
@@ -560,19 +674,30 @@ void setup() {
   pinMode(PIN_BUZZER,      OUTPUT);
   pinMode(PIN_TRIG,        OUTPUT);
   pinMode(PIN_ECHO,        INPUT);
+  pinMode(PIN_RELAY_MAGNET,OUTPUT);
   pinMode(PIN_LIMIT_ATAS,  INPUT_PULLUP);
   pinMode(PIN_LIMIT_BAWAH, INPUT_PULLUP);
   pinMode(PIN_BTN_START,   INPUT_PULLUP);
   pinMode(PIN_BTN_STOP,    INPUT_PULLUP);
 
   motorStop(); tutupGate();
+  setMagnet(false);
   setLED(false, false);
   digitalWrite(PIN_BUZZER, LOW);
+  
+  // Setup Stepper
+  stepper.setMaxSpeed(NEMA23_MAX_SPEED);
+  stepper.setAcceleration(NEMA23_ACCELERATION);
+  stepper.disableOutputs();
 
-  // LCD
+  // LCD (opsional)
+#if USE_LCD
   Wire.begin(PIN_SDA, PIN_SCL);
   lcd.init(); lcd.backlight();
-  lcdPrint("MESIN TEMPE v1.0", "Memulai...");
+  lcdPrint("MESIN TEMPE v9.0", "Memulai...");
+#else
+  Serial.println("[SYSTEM] Mesin Tempe v9.0 Memulai (Web Dashboard Mode)");
+#endif
 
   // Load Cell
   scale.begin(PIN_HX711_DOUT, PIN_HX711_SCK);
@@ -650,9 +775,10 @@ void loop() {
 
   📌 LIBRARY YANG HARUS DIINSTALL (Arduino Library Manager)
   ──────────────────────────────────────────────────────────
+  - "AccelStepper" by Mike McCauley (untuk Stepper NEMA23)
   - "HX711" by bogde (versi 0.7.5+)
-  - "LiquidCrystal I2C" by Frank de Brabander
   - "ArduinoJson" by Benoit Blanchon (versi 6.x)
+  - "LiquidCrystal I2C" by Frank de Brabander (opsional, hanya jika USE_LCD 1)
   - ESP32 board: Tools → Board → ESP32 Dev Module
 
   📌 CARA UPLOAD index.html KE SPIFFS

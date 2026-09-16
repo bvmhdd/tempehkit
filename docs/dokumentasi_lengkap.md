@@ -1,8 +1,13 @@
 # 🫘 Mesin Pencetak Tempe Otomatis
 ## Dokumentasi Lengkap — Desain, Wiring, BOM & Panduan Operator
 
-> 📁 Workspace: `c:\Users\muhib\OneDrive\Dokumen\IOT Tempe`
-> 🕒 Dibuat: September 2026
+> [!IMPORTANT]
+> **DOKUMEN HISTORIS:** Desain resmi mutakhir telah diperbarui ke **v9 (6-Slot Simultan, Flip Rotari 180°)**.  
+> Untuk acuan implementasi dan belanja terkini, silakan merujuk ke:
+> 1. [Implementation Plan v9 Final](implementation_plan_final.md)
+> 2. [Daftar Belanja BOM 3-Channel](bom_belanja.md)
+> 3. [Project Execution Plan](PROJECT_EXECUTION_PLAN.md)
+> 4. [Dimensi Mekanik v9](dimensi_mekanik.md)
 
 ---
 

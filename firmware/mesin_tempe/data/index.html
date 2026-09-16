@@ -236,7 +236,7 @@
 
 <div class="header">
   <h1>🫘 Mesin Tempe Otomatis</h1>
-  <p>6 Slot · Press Simultan · Lift-Off Frame</p>
+  <p>6 Slot · Press Simultan · Rotary Flip 180°</p>
   <div class="ip-badge" id="ipBadge">Menghubungkan...</div>
 </div>
 
@@ -317,6 +317,17 @@
         <span class="sensor-label">Limit Bawah</span>
         <span class="sensor-val" id="valLimitBawah">—</span>
       </div>
+      <hr style="margin:8px 0; border-color:var(--surface2)">
+      <div class="sensor-row">
+        <div class="sensor-dot" id="dotMagnet"></div>
+        <span class="sensor-label">Kunci Magnet</span>
+        <span class="sensor-val" id="valMagnet">—</span>
+      </div>
+      <div class="sensor-row" style="margin-bottom:0">
+        <span style="font-size:1.2rem;margin-right:8px">🔄</span>
+        <span class="sensor-label">Posisi Cetakan</span>
+        <span class="sensor-val" id="valStepper">—</span>
+      </div>
     </div>
   </div>
 
@@ -332,7 +343,7 @@
       <div class="slot-box" id="slot6">6</div>
     </div>
     <div style="margin-top:8px;font-size:0.72rem;color:var(--muted)">
-      Semua 6 slot diproses bersamaan dalam satu siklus press
+      Semua 6 slot diproses bersamaan dalam satu siklus
     </div>
   </div>
 
@@ -343,6 +354,10 @@
       <button class="btn btn-start" id="btnStart" onclick="sendCmd('START')">▶ START</button>
       <button class="btn btn-stop"  id="btnStop"  onclick="sendCmd('STOP')">⏹ STOP</button>
       <button class="btn btn-reset" onclick="sendCmd('RESET_HARI')">↺ Reset Hari</button>
+    </div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn btn-ghost" onclick="sendCmd('TOGGLE_MAGNET')">🧲 Toggle Magnet</button>
+      <button class="btn btn-ghost" onclick="sendCmd('ROTATE_TEST')">🔄 Test Putar</button>
     </div>
     <hr>
     <div style="font-size:0.72rem;color:var(--muted);line-height:1.6">
@@ -409,7 +424,11 @@
     TUNGGU_SIAP:  { label: 'Tunggu Siap', sub: 'Pasang plastik lalu tekan START', dot: 'homing', icon: '🧤' },
     DOSING:       { label: 'Mengisi...', sub: 'Kedelai sedang dimasukkan ke cetakan', dot: 'running', icon: '🌾' },
     PRESSING:     { label: 'Pressing!', sub: 'Menekan kedelai dalam 6 slot', dot: 'running', icon: '⬇' },
-    LIFT_OFF:     { label: 'Naik...', sub: 'Frame terangkat, tempe bebas di ancak', dot: 'running', icon: '⬆' },
+    LIFT_OFF:     { label: 'Naik...', sub: 'Frame terangkat', dot: 'running', icon: '⬆' },
+    LOCK_LID:     { label: 'Kunci Tutup', sub: 'Elektromagnet mengunci...', dot: 'running', icon: '🧲' },
+    ROTATE_MOLD:  { label: 'Memutar...', sub: 'Cetakan diputar 180°', dot: 'running', icon: '🔄' },
+    UNLOCK_LID:   { label: 'Buka Tutup', sub: 'Ambil tempe, lalu tekan START', dot: 'idle', icon: '🔓' },
+    RETURN_MOLD:  { label: 'Kembali...', sub: 'Memutar kembali ke posisi awal', dot: 'homing', icon: '↩️' },
     SELESAI:      { label: 'Selesai!', sub: '6 tempe berhasil dicetak — ambil ancak', dot: 'running', icon: '✅' },
     ALARM_HOPPER: { label: '⚠ Kedelai Habis!', sub: 'Isi hopper lalu tekan STOP', dot: 'alarm', icon: '🚨' },
     ALARM_ERROR:  { label: '⚠ Error Mekanik!', sub: 'Cek mesin → tekan STOP untuk restart', dot: 'alarm', icon: '🔴' },
@@ -468,12 +487,20 @@
     document.getElementById('counterHari').textContent  = d.counterHariIni ?? '—';
     document.getElementById('counterTotal').textContent = d.counterTotal   ?? '—';
 
-    // Limit Switches
+    // Limit Switches & Actuators
     updateSensor('dotLimitAtas',  'valLimitAtas',  d.limitAtas,  'Aktif', 'Tidak');
     updateSensor('dotLimitBawah', 'valLimitBawah', d.limitBawah, 'Aktif', 'Tidak');
+    updateSensor('dotMagnet',     'valMagnet',     d.magnetActive, 'TERKUNCI', 'Lepas');
+    
+    // Stepper Position
+    const stepPos = d.stepperPos || 0;
+    let posText = stepPos + " step";
+    if(stepPos === 0) posText = "0° (Normal)";
+    else if (stepPos > 1000) posText = "180° (Terbalik)";
+    document.getElementById('valStepper').textContent = posText;
 
-    // Slot boxes — semua aktif saat pressing/selesai
-    const isActive = ['PRESSING','LIFT_OFF','SELESAI','DOSING'].includes(d.state);
+    // Slot boxes — semua aktif saat proses berlangsung
+    const isActive = ['PRESSING','LIFT_OFF','LOCK_LID','ROTATE_MOLD','UNLOCK_LID','RETURN_MOLD','SELESAI','DOSING'].includes(d.state);
     for (let i = 1; i <= 6; i++) {
       const el = document.getElementById('slot' + i);
       el.className = 'slot-box' + (isActive ? ' active' : '');
