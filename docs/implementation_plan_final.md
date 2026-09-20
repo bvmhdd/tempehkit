@@ -37,12 +37,12 @@ Mesin semi-otomatis untuk mencetak tempe secara massal. Seluruh 6 slot dicetak *
 
 | 1. Isometric 3D View (Rotary Flip Mechanism) | 2. Detail 6-Slot Mold & Dosing Nozzle |
 | :---: | :---: |
-| ![Isometric Rotary View](../assets/mold_rotary_isometric_view.jpg) | ![Mold Detail](../assets/machine_opsi2_mold_detail.jpg) |
+| ![Isometric Rotary View](../assets/mold_rotary_isometric_view.jpg) | ![Mold Detail](../assets/Fix/machine_opsi2_mold_detail.jpg) |
 | *Perspektif 3D cetakan rotari dengan poros as Ø20mm, puli HTD3M 60T, dan bracket NEMA 23* | *Detail geometri cetakan 6 slot (59.1cm) dengan nozzle pengisian Y-Fork* |
 
 | 3. Front Elevation View (Rangka 90cm) | 4. Top Plan View (Cetakan & Penekan) |
 | :---: | :---: |
-| ![Front View](../assets/machine_opsi2_front_view.jpg) | ![Top View](../assets/machine_opsi2_top_view.jpg) |
+| ![Front View](../assets/Fix/machine_opsi2_front_view.jpg) | ![Top View](../assets/Fix/machine_opsi2_top_view.jpg) |
 | *Tampak depan: Rangka lebar 90cm, dual lead screw T8, dan corong hopper 6 nozzle* | *Tampak atas: Tata letak cetakan 6 slot, jarak pitch 8.5cm, dan jalur transmisi motor* |
 
 ---

@@ -42,12 +42,12 @@ Untuk memudahkan pembagian tugas pengadaan, fabrikasi, dan pemrograman, gunakan 
 
 | 1. Isometric 3D View (Rotary Flip) | 2. Detail 6-Slot Mold & Dosing Nozzle |
 | :---: | :---: |
-| ![Isometric View](assets/mold_rotary_isometric_view.jpg) | ![Mold Detail](assets/machine_opsi2_mold_detail.jpg) |
+| ![Isometric View](assets/mold_rotary_isometric_view.jpg) | ![Mold Detail](assets/Fix/machine_opsi2_mold_detail.jpg) |
 | *Perspektif 3D cetakan rotari 6-slot dengan sabuk HTD3M & bracket motor* | *Detail geometri cetakan 6 slot (59.1cm) dengan nozzle pengisian Y-Fork* |
 
 | 3. Front Elevation View (Rangka 90cm) | 4. Top Plan View (Cetakan & Penekan) |
 | :---: | :---: |
-| ![Front View](assets/machine_opsi2_front_view.jpg) | ![Top View](assets/machine_opsi2_top_view.jpg) |
+| ![Front View](assets/Fix/machine_opsi2_front_view.jpg) | ![Top View](assets/Fix/machine_opsi2_top_view.jpg) |
 | *Tampak depan: Rangka lebar 90cm, dual lead screw T8, & corong hopper 6 nozzle* | *Tampak atas: Tata letak cetakan 6 slot, jarak pitch 8.5cm, & jalur transmisi motor* |
 
 ---
@@ -77,12 +77,17 @@ Untuk memudahkan pembagian tugas pengadaan, fabrikasi, dan pemrograman, gunakan 
 ```
 tempehkit/
 ├── assets/                          # Dokumentasi visual & gambar CAD
+│   ├── Fix/                         # Gambar CAD 3D Multi-Sudut v9 Fix
+│   │   ├── machine_opsi2_balanced.jpg
+│   │   ├── machine_opsi2_exploded_view.jpg
+│   │   ├── machine_opsi2_front_view.jpg
+│   │   ├── machine_opsi2_left_side_view.jpg
+│   │   ├── machine_opsi2_mold_detail.jpg
+│   │   ├── machine_opsi2_rear_view.jpg
+│   │   ├── machine_opsi2_right_side_view.jpg
+│   │   ├── machine_opsi2_side_folding.jpg
+│   │   └── machine_opsi2_top_view.jpg
 │   ├── mold_rotary_isometric_view.jpg # Visualisasi 3D cetakan rotari NEMA 23 (Hero v9)
-│   ├── machine_opsi2_mold_detail.jpg  # Detail cetakan 6-slot & pipa nozzle Y-Fork
-│   ├── machine_opsi2_front_view.jpg   # Tampak depan rangka lebar 90cm
-│   ├── machine_opsi2_top_view.jpg     # Tampak atas cetakan 6-slot & pitch 8.5cm
-│   ├── machine_opsi2_balanced.jpg     # Render 3D visualisasi mesin
-│   ├── machine_opsi2_exploded_view.jpg# Exploded view rakitan mekatronika
 │   └── wiring_diagram_esp32.jpg       # Skematik diagram pengkabelan ESP32
 ├── docs/                            # Dokumentasi teknis & panduan kerja
 │   ├── bom_belanja.md               # 🛒 Shopping list 3-channel (Online, Besi, Bengkel)
