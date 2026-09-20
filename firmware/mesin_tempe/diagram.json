@@ -1,0 +1,227 @@
+{
+  "version": 1,
+  "author": "TempehKit v9",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "id": "esp32",
+      "type": "wokwi-esp32-devkit-v1",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "id": "hx711",
+      "type": "wokwi-hx711",
+      "top": -180,
+      "left": -300,
+      "attrs": {}
+    },
+    {
+      "id": "loadcell",
+      "type": "wokwi-half-bridge-strain-gauge",
+      "top": -280,
+      "left": -500,
+      "attrs": {}
+    },
+    {
+      "id": "l298n",
+      "type": "wokwi-l298n",
+      "top": 200,
+      "left": -350,
+      "attrs": {}
+    },
+    {
+      "id": "motor_press",
+      "type": "wokwi-dc-motor",
+      "top": 320,
+      "left": -550,
+      "attrs": { "label": "Motor Press (Lead Screw)" }
+    },
+    {
+      "id": "tb6600",
+      "type": "wokwi-a4988",
+      "top": -180,
+      "left": 300,
+      "attrs": {}
+    },
+    {
+      "id": "nema23",
+      "type": "wokwi-stepper-motor",
+      "top": -280,
+      "left": 500,
+      "attrs": { "label": "NEMA 23 (Rotary Flip)" }
+    },
+    {
+      "id": "relay2ch",
+      "type": "wokwi-relay-module",
+      "top": 200,
+      "left": 300,
+      "attrs": {}
+    },
+    {
+      "id": "relay_gate",
+      "type": "wokwi-relay-module",
+      "top": 320,
+      "left": 300,
+      "attrs": {}
+    },
+    {
+      "id": "led_ok",
+      "type": "wokwi-led",
+      "top": 80,
+      "left": -500,
+      "attrs": { "color": "green", "label": "LED OK (GPIO2)" }
+    },
+    {
+      "id": "res_led_ok",
+      "type": "wokwi-resistor",
+      "top": 80,
+      "left": -420,
+      "attrs": { "value": "220" }
+    },
+    {
+      "id": "led_alarm",
+      "type": "wokwi-led",
+      "top": 140,
+      "left": -500,
+      "attrs": { "color": "red", "label": "LED Alarm (GPIO15)" }
+    },
+    {
+      "id": "res_led_alarm",
+      "type": "wokwi-resistor",
+      "top": 140,
+      "left": -420,
+      "attrs": { "value": "220" }
+    },
+    {
+      "id": "buzzer",
+      "type": "wokwi-buzzer",
+      "top": 200,
+      "left": -500,
+      "attrs": { "label": "Buzzer (GPIO23)" }
+    },
+    {
+      "id": "btn_start",
+      "type": "wokwi-pushbutton",
+      "top": 380,
+      "left": -200,
+      "attrs": { "color": "green", "label": "START (GPIO34)" }
+    },
+    {
+      "id": "btn_stop",
+      "type": "wokwi-pushbutton",
+      "top": 440,
+      "left": -200,
+      "attrs": { "color": "red", "label": "STOP (GPIO35)" }
+    },
+    {
+      "id": "sw_limit_atas",
+      "type": "wokwi-pushbutton",
+      "top": 380,
+      "left": 100,
+      "attrs": { "color": "blue", "label": "Limit Switch ATAS (GPIO32)" }
+    },
+    {
+      "id": "sw_limit_bawah",
+      "type": "wokwi-pushbutton",
+      "top": 440,
+      "left": 100,
+      "attrs": { "color": "blue", "label": "Limit Switch BAWAH (GPIO33)" }
+    },
+    {
+      "id": "res_btn_start",
+      "type": "wokwi-resistor",
+      "top": 395,
+      "left": -100,
+      "attrs": { "value": "10000" }
+    },
+    {
+      "id": "res_btn_stop",
+      "type": "wokwi-resistor",
+      "top": 455,
+      "left": -100,
+      "attrs": { "value": "10000" }
+    },
+    {
+      "id": "res_ls_atas",
+      "type": "wokwi-resistor",
+      "top": 395,
+      "left": 240,
+      "attrs": { "value": "10000" }
+    },
+    {
+      "id": "res_ls_bawah",
+      "type": "wokwi-resistor",
+      "top": 455,
+      "left": 240,
+      "attrs": { "value": "10000" }
+    }
+  ],
+  "connections": [
+    ["esp32:GND.1", "$serialMonitor:GND", "", []],
+    ["esp32:TX", "$serialMonitor:RX", "", []],
+    ["esp32:RX", "$serialMonitor:TX", "", []],
+
+    ["esp32:4", "hx711:DT", "green", []],
+    ["esp32:5", "hx711:SCK", "yellow", []],
+    ["hx711:VCC", "esp32:3V3", "red", []],
+    ["hx711:GND", "esp32:GND.1", "black", []],
+    ["hx711:E+", "loadcell:E+", "red", []],
+    ["hx711:E-", "loadcell:E-", "black", []],
+    ["hx711:A+", "loadcell:A+", "green", []],
+    ["hx711:A-", "loadcell:A-", "white", []],
+
+    ["esp32:25", "l298n:IN1", "orange", []],
+    ["esp32:26", "l298n:IN2", "orange", []],
+    ["l298n:MOTOR-A+", "motor_press:A+", "blue", []],
+    ["l298n:MOTOR-A-", "motor_press:A-", "blue", []],
+    ["l298n:GND", "esp32:GND.1", "black", []],
+
+    ["esp32:12", "tb6600:STEP", "purple", []],
+    ["esp32:14", "tb6600:DIR", "purple", []],
+    ["tb6600:MOTOR-A+", "nema23:A+", "blue", []],
+    ["tb6600:MOTOR-A-", "nema23:A-", "blue", []],
+    ["tb6600:MOTOR-B+", "nema23:B+", "yellow", []],
+    ["tb6600:MOTOR-B-", "nema23:B-", "yellow", []],
+    ["tb6600:GND", "esp32:GND.1", "black", []],
+
+    ["esp32:13", "relay2ch:IN1", "brown", []],
+    ["esp32:27", "relay_gate:IN1", "brown", []],
+    ["relay2ch:VCC", "esp32:VIN", "red", []],
+    ["relay2ch:GND", "esp32:GND.1", "black", []],
+    ["relay_gate:VCC", "esp32:VIN", "red", []],
+    ["relay_gate:GND", "esp32:GND.1", "black", []],
+
+    ["esp32:2", "res_led_ok:1", "green", []],
+    ["res_led_ok:2", "led_ok:A", "green", []],
+    ["led_ok:C", "esp32:GND.1", "black", []],
+
+    ["esp32:15", "res_led_alarm:1", "red", []],
+    ["res_led_alarm:2", "led_alarm:A", "red", []],
+    ["led_alarm:C", "esp32:GND.1", "black", []],
+
+    ["esp32:23", "buzzer:1", "cyan", []],
+    ["buzzer:2", "esp32:GND.1", "black", []],
+
+    ["esp32:3V3", "res_btn_start:1", "red", []],
+    ["res_btn_start:2", "btn_start:1.l", "gray", []],
+    ["btn_start:2.l", "esp32:34", "gray", []],
+    ["btn_start:1.r", "esp32:GND.1", "black", []],
+
+    ["esp32:3V3", "res_btn_stop:1", "red", []],
+    ["res_btn_stop:2", "btn_stop:1.l", "gray", []],
+    ["btn_stop:2.l", "esp32:35", "gray", []],
+    ["btn_stop:1.r", "esp32:GND.1", "black", []],
+
+    ["esp32:3V3", "res_ls_atas:1", "red", []],
+    ["res_ls_atas:2", "sw_limit_atas:1.l", "gray", []],
+    ["sw_limit_atas:2.l", "esp32:32", "gray", []],
+    ["sw_limit_atas:1.r", "esp32:GND.1", "black", []],
+
+    ["esp32:3V3", "res_ls_bawah:1", "red", []],
+    ["res_ls_bawah:2", "sw_limit_bawah:1.l", "gray", []],
+    ["sw_limit_bawah:2.l", "esp32:33", "gray", []],
+    ["sw_limit_bawah:1.r", "esp32:GND.1", "black", []]
+  ]
+}
