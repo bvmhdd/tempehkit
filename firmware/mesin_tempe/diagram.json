@@ -15,14 +15,7 @@
       "type": "wokwi-hx711",
       "top": -180,
       "left": -300,
-      "attrs": {}
-    },
-    {
-      "id": "loadcell",
-      "type": "wokwi-half-bridge-strain-gauge",
-      "top": -280,
-      "left": -500,
-      "attrs": {}
+      "attrs": { "type": "5kg" }
     },
     {
       "id": "l298n",
@@ -167,10 +160,6 @@
     ["esp32:5", "hx711:SCK", "yellow", []],
     ["hx711:VCC", "esp32:3V3", "red", []],
     ["hx711:GND", "esp32:GND.1", "black", []],
-    ["hx711:E+", "loadcell:E+", "red", []],
-    ["hx711:E-", "loadcell:E-", "black", []],
-    ["hx711:A+", "loadcell:A+", "green", []],
-    ["hx711:A-", "loadcell:A-", "white", []],
 
     ["esp32:25", "l298n:IN1", "orange", []],
     ["esp32:26", "l298n:IN2", "orange", []],

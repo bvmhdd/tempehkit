@@ -1,5 +1,5 @@
 /*==========================================================
-  TEST 02: LOAD CELL 10KG & HX711 INTERACTIVE CALIBRATION
+  TEST 02: LOAD CELL 5KG & HX711 INTERACTIVE CALIBRATION
   Mesin Pencetak Tempe Otomatis
   ──────────────────────────────────────────────────────────
   Tujuan:
@@ -10,8 +10,8 @@
   Wiring:
   - HX711 VCC  -> 5V (Step-down / Pin VIN)
   - HX711 GND  -> GND ESP32
-  - HX711 DT   -> ESP32 GPIO 4
-  - HX711 SCK  -> ESP32 GPIO 5
+  - HX711 DT   -> ESP32 GPIO 5
+  - HX711 SCK  -> ESP32 GPIO 4
 
   Warna Kabel Load Cell ke Modul HX711:
   - Merah  -> E+ (Excitation +)
@@ -22,17 +22,17 @@
 
 #include <HX711.h>
 
-#define PIN_HX711_DOUT 4
-#define PIN_HX711_SCK  5
+#define PIN_HX711_DOUT 5
+#define PIN_HX711_SCK  4
 
 HX711 scale;
-float calibration_factor = 420.0; // Nilai awal perkiraan
+float calibration_factor = 0.42; // Nilai awal simulasi Wokwi (satuan gram)
 
 void printMenu() {
   Serial.println("\n--- PERINTAH KALIBRASI INTERAKTIF ---");
   Serial.println("  't' : Tare (Nol-kan timbangan saat kosong)");
-  Serial.println("  '+' : Naikkan faktor kalibrasi (+10)");
-  Serial.println("  '-' : Turunkan faktor kalibrasi (-10)");
+  Serial.println("  '+' : Naikkan faktor kalibrasi (+0.02)");
+  Serial.println("  '-' : Turunkan faktor kalibrasi (-0.02)");
   Serial.println("  'c' : Masukkan beban kalibrasi standar (misal botol 500g / 1000g)");
   Serial.println("-------------------------------------");
 }
@@ -41,18 +41,49 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
   Serial.println("\n==========================================");
-  Serial.println("  TEST 02: LOAD CELL 10KG + HX711 CALIBRATION");
+  Serial.println("  TEST 02: LOAD CELL 5KG + HX711 CALIBRATION");
   Serial.println("==========================================");
+  Serial.flush();
 
-  scale.begin(PIN_HX711_DOUT, PIN_HX711_SCK);
+  Serial.println("[1] Memeriksa koneksi modul HX711...");
+  Serial.printf("    Konfigurasi pin: DOUT=GPIO %d, SCK=GPIO %d\n", PIN_HX711_DOUT, PIN_HX711_SCK);
+  Serial.flush();
 
-  Serial.println("[1] Memeriksa koneksi HX711...");
-  if (scale.wait_ready_timeout(2000)) {
+  // Konfigurasi pin awal secara aman untuk membangunkan chip HX711
+  pinMode(PIN_HX711_SCK, OUTPUT);
+  digitalWrite(PIN_HX711_SCK, LOW); // SCK LOW = mode aktif (bukan power-down)
+  pinMode(PIN_HX711_DOUT, INPUT_PULLUP);
+
+  // Tunggu respon pin data (HX711 akan menarik DOUT ke LOW saat siap)
+  unsigned long startCheck = millis();
+  bool sensorReady = false;
+  while (millis() - startCheck < 2500) {
+    if (digitalRead(PIN_HX711_DOUT) == LOW) {
+      sensorReady = true;
+      break;
+    }
+    delay(20);
+    yield(); // Mencegah watchdog reset pada ESP32
+  }
+
+  if (sensorReady) {
+    scale.begin(PIN_HX711_DOUT, PIN_HX711_SCK);
     Serial.println("   [OK] HX711 terdeteksi dan siap!");
   } else {
-    Serial.println("   [ERROR] HX711 tidak merespons!");
-    Serial.println("   Periksa kabel DOUT (GPIO 4), SCK (GPIO 5), VCC (5V), GND.");
-    while (1) delay(1000);
+    Serial.println("   [ERROR] HX711 TIDAK MERESPONS!");
+    Serial.println("   -------------------------------------------------");
+    Serial.println("   Penyebab yang sering terjadi:");
+    Serial.println("   1. Pin DT & SCK tertukar:");
+    Serial.printf("      - Pastikan kabel DT modul ke GPIO %d\n", PIN_HX711_DOUT);
+    Serial.printf("      - Pastikan kabel SCK modul ke GPIO %d\n", PIN_HX711_SCK);
+    Serial.println("   2. Kabel VCC (5V) atau GND longgar.");
+    Serial.println("   3. 4 kabel Load Cell ke HX711 belum terpasang.");
+    Serial.println("   -------------------------------------------------");
+    Serial.flush();
+    while (1) {
+      delay(1000);
+      yield(); // Tetap jalan tanpa merestart ESP32
+    }
   }
 
   Serial.println("[2] Melakukan TARE awal (pastikan sensor kosong tanpa beban)...");
@@ -79,11 +110,11 @@ void loop() {
       Serial.println(">> Melakukan TARE... sensor di-nolkan.");
       scale.tare();
     } else if (ch == '+') {
-      calibration_factor += 10.0;
+      calibration_factor += 0.02;
       scale.set_scale(calibration_factor);
       Serial.printf(">> Faktor kalibrasi dinaikkan: %.2f\n", calibration_factor);
     } else if (ch == '-') {
-      calibration_factor -= 10.0;
+      calibration_factor -= 0.02;
       scale.set_scale(calibration_factor);
       Serial.printf(">> Faktor kalibrasi diturunkan: %.2f\n", calibration_factor);
     } else if (ch == 'c' || ch == 'C') {

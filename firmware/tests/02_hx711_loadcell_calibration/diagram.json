@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "author": "TempehKit v9",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp32",
+      "top": 0,
+      "left": -120,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-breadboard-half",
+      "id": "bb1",
+      "top": 20,
+      "left": 120,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-hx711",
+      "id": "hx711",
+      "top": -80,
+      "left": 400,
+      "attrs": { "type": "5kg" }
+    }
+  ],
+  "connections": [
+    ["esp32:TX", "$serialMonitor:RX", "", []],
+    ["esp32:RX", "$serialMonitor:TX", "", []],
+
+    ["esp32:3V3", "bb1:tp.1", "red", []],
+    ["esp32:GND.1", "bb1:tn.1", "black", []],
+
+    ["bb1:tp.10", "hx711:VCC", "red", []],
+    ["bb1:tn.10", "hx711:GND", "black", []],
+
+    ["esp32:4", "hx711:DT", "green", []],
+    ["esp32:5", "hx711:SCK", "yellow", []]
+  ],
+  "serialMonitor": {
+    "display": "always"
+  }
+}

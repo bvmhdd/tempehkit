@@ -1,0 +1,4 @@
+# Wokwi Library Dependencies for TempehKit v9
+HX711
+AccelStepper
+ArduinoJson
