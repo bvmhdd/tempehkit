@@ -1,172 +1,58 @@
-# 📐 Spesifikasi Dimensi Mekanik — Mesin Pencetak Tempe
-## Desain Final v9 — 6-Slot Simultan, Flip Rotari 180°
+# 📐 Spesifikasi Dimensi Mekanik Final — TempehKit v13 (Opsi 2)
+## 6-Slot • Tebar Rata 200 mm • Pad Silikon • Flip 180° • Laci Elevator 75 mm
 
-> **Status Dokumen**: FINAL v9  
-> **Konsep Mekanik**: 6 Slot Cetak Serentak, Pembalikan Rotari 180° (Flip Mold), Dual Lead Screw Pressing, Rangka Lebar 90 cm.
-
----
-
-## 1. Rangkuman Dimensi Utama
-
-| Elemen Mesin | Panjang / Lebar | Tinggi | Kedalaman | Keterangan |
-|---|:---:|:---:|:---:|---|
-| **Rangka Utama (Frame)** | 90.0 cm | 130.0 cm | 40.0 cm | Besi hollow 40×40×2.0 mm |
-| **Cetakan 6-Slot (SS304)** | 59.1 cm | 3.6 cm | 24.0 cm | 6 rongga @ 21.3 × 6.6 cm |
-| **Poros As Rotasi Cetakan** | 65.0 cm | Ø 20 mm | — | As baja/stainless pejal Ø20mm |
-| **Pelat Gantry Penekan** | 59.0 cm | 5.0 mm | 15.0 cm | Plat aluminium 5mm (6 pad) |
-| **Corong Hopper Kedelai** | 60.0 cm | 30.0 cm | 25.0 cm | Plat SS304 1.0mm, 6 cabang nozzle |
-| **Ancak Bambu Penampung** | 65.0 cm | — | 25.0 cm | Diletakkan di rak bawah (h=30cm) |
+> **Status Dokumen:** FINAL v13 (Opsi 2 — Zero-Collision & Verified 3D)
+> **Acuan Visual:** [`cad/viewer_3d_v13.html`](../cad/viewer_3d_v13.html) & [`cad/v12_mekanisme_rel_dosing.png`](../cad/v12_mekanisme_rel_dosing.png)
 
 ---
 
-## 2. Geometri Cetakan 6-Slot (Mold Assembly)
+## 1. Rangkuman Dimensi Utama (Satuan mm)
 
-```
-TAMPAK ATAS CETAKAN (59.1 cm × 24.0 cm):
-
-←─────────────────────────────────── 59.1 cm ───────────────────────────────────→
-┌───────────────────────────────────────────────────────────────────────────────┐
-│ 6.75 │ S1: 6.6 │ 1 │ S2: 6.6 │ 1 │ S3: 6.6 │ 1 │ S4: 6.6 │ 1 │ S5: 6.6 │ 1 │ S6: 6.6 │ 6.75 │ 24.0
-│  cm  │  21.3cm │cm │  21.3cm │cm │  21.3cm │cm │  21.3cm │cm │  21.3cm │cm │  21.3cm │  cm  │  cm
-└───────────────────────────────────────────────────────────────────────────────┘
-       ▲         ▲   ▲         ▲   ▲         ▲   ▲         ▲   ▲         ▲   ▲
-       └─Nozzle 1─┘   └─Nozzle 2─┘   └─Nozzle 3─┘   └─Nozzle 4─┘   └─Nozzle 5─┘   └─Nozzle 6─┘
-       ◄────────────── Pitch Antar Lubang Nozzle = 8.5 cm center-to-center ─────────────►
-```
-
-### Detail Spesifikasi Cetakan:
-* **Jumlah Rongga Slot:** 6 slot sejajar.
-* **Ukuran Tiap Rongga:** Panjang 21.3 cm × Lebar 6.6 cm × Kedalaman/Tebal 3.6 cm (Standar komersial tempe pasar).
-* **Sekat Pemisah Antar Slot:** Plat stainless tebal 1.0 cm.
-* **Margin Tepi Kiri & Kanan:** Masing-masing 6.75 cm untuk penempatan klem as poros Ø20mm dan bracket elektromagnet pengunci tutup.
-* **Penutup Cetakan (Lid):** 6 lembar plat aluminium 3mm berengsel baja 2 inchi di sisi belakang tiap slot, dengan pelat penangkap magnet di sisi depan.
+| Elemen Mesin | Lebar (X) | Tinggi (Y) | Kedalaman (Z) | Material & Catatan |
+|:---|:---:|:---:|:---:|:---|
+| **Rangka Utama (Frame)** | `900 mm` | `1420 mm` | `640 mm` | Besi Hollow `40×40×2.0 mm` (+ kaki karet `40 mm`) |
+| **Cetakan 6-Slot (SS304)** | `591 mm` | `36 mm` | `240 mm` | 6 rongga @ `66×213 mm`, sekat `10 mm`, **pitch eksak `76 mm`** |
+| **Poros Rotasi (Stub-Axle)** | `2× 145 mm` | `Ø 20 mm` | — | **Stub-Axle kiri & kanan** + flange luar + spine bawah (rongga 100% bersih!) |
+| **Pelat Gantry Press + 6 Pad** | `750 mm` | `5 + 20 mm` | `225 mm` | Pelat Al `5 mm` + 6 Pad (`64×210 mm`: Al `15 mm` + **Silikon Food-Grade `5 mm`**) |
+| **2× Linear Guide Press** | `X = 95 & 805` | `545 mm` | `Z = 265` | Shaft `Ø12 mm` + LM12UU + SK12 (`Y = 555..1100`, bebas poros as & bebas laci!) |
+| **Hopper Trapesium + Corong** | `300 → 64 mm` | `650 mm` | `210 → 200 mm` | SS304 `1.0 mm`, duduk di palang `Y=1100`, mulut celah `Y=730` + Servo Gate `Y=718` |
+| **Kotak Takar Memanjang** | `58 mm` | `70 mm` | `200 mm` | SS304 `1.0 mm`, 3 kompartemen, pintu Clamshell (`Y = 625..695`) |
+| **Rel Geser X & Rel Z Dosing** | `820 mm` (X) | `Y = 625 & 705` | `+280 mm` (Z) | 2× Shaft `Ø16 mm` + 4× LM16UU (`Z=602`) + Rel Laci Double Track `30 cm` |
+| **Laci Elevator Penyambut** | `772 mm` | `Y = 445↔520` | `270 mm` | Rel Laci Double Track `35–40 cm` + **Mini Actuator 12V 300N** + 2× Guide `Ø10 mm` |
+| **Ancak Bambu Penampung** | `640 mm` | `18 mm` | `248 mm` | Diselipkan horizontal ke **Rel Selip L-Channel** di mulut cetakan (`0 mm gap`) |
 
 ---
 
-## 3. Desain Rangka Utama (Frame 90 cm)
+## 2. Geometri Cetakan 6-Slot & Pad Penekan (Pitch Eksak 76 mm)
 
-```
-TAMPAK DEPAN RANGKA MESIN (Besi Hollow 40×40mm, Tebal 2.0mm):
-
-┌─────────────────────────────────────────────────────────────┐
-│                 [CORONG HOPPER SS304 60cm]                  │ h = 130 cm
-│                 \─────────────────────────/                 │
-│                 / ○   ○   ○   ○   ○   ○ \  [SOLENOID GATE]  │
-├─────────────────────────────────────────────────────────────┤ h = 100 cm
-│  [LEAD SCREW]     [PELAT PENEKAN 6-PAD 59cm]   [LEAD SCREW] │
-│       │                      ↕                      │       │ h = 85 cm
-│   [BEARING 608]    [MOTOR DC GEARBOX 12V]     [BEARING 608] │
-├─────────────────────────────────────────────────────────────┤
-│  [BRACKET NEMA23]                                           │ h = 55 cm
-│       │ (Belt HTD3M)                                        │
-│  [PULLEY 60T] ─── [AS POROS Ø20mm + MOLD 6-SLOT] ───────────┤
-│  [BEARING UCFL204]                             [BEARING FL] │
-├─────────────────────────────────────────────────────────────┤ h = 30 cm
-│                 [RAK PENAMPUNG ANCAK BAMBU]                 │
-├─────────────────────────────────────────────────────────────┤ h = 15 cm
-│               [BOX ENCLOSURE ELEKTRONIK ABS]                │
-└─────────────────────────────────────────────────────────────┘
-  ◄────────────────────────── 90 cm ─────────────────────────►
-```
-
-### Ketinggian Titik-Titik Kritis Rangka:
-1. **h = 0 cm (Lantai):** 4 Kaki besi siku/hollow dilengkapi baut karet leveling M10 (anti-getar dan anti-slip).
-2. **h = 15 cm:** Dudukan box panel kontrol ABS (200×150×100mm) di sisi samping terlindung dari cipratan kedelai.
-3. **h = 30 cm:** Rak penopang ancak bambu (tempat tempe jatuh saat cetakan dibalik 180°). Jarak jatuh tempe ke ancak diatur sangat minim (2–3 cm) agar tempe tidak hancur saat lepas.
-4. **h = 55 cm:** Titik pusat poros rotasi cetakan (as Ø20mm ditopang 2 Bearing Flange UCFL 204) dan dudukan bracket NEMA 23 (h=50cm di tiang kiri).
-5. **h = 85 cm:** Posisi pelat penekan saat posisi *HOMING/LIFT-OFF* dan dudukan motor DC gearbox 12V.
-6. **h = 100 cm:** Posisi bawah pintu geser corong hopper (*sliding gate*).
-7. **h = 130 cm:** Rangka paling atas penopang corong hopper kedelai.
+* **Lebar Total Cetakan:** `67.5` (margin kiri) `+ 6 × 66` (rongga) `+ 5 × 10` (sekat) `+ 67.5` (margin kanan) `= 591.0 mm`.
+* **Koordinat Pusat 6 Slot (dari sisi kiri rangka `X = 0`):**
+  * `S1 = 255 mm`, `S2 = 331 mm`, `S3 = 407 mm`, `S4 = 483 mm`, `S5 = 559 mm`, `S6 = 635 mm` (jarak eksak **`76.0 mm`**).
+* **Lubang Angin (*Air Vent*):** 2–3 lubang `Ø3 mm` di dasar setiap rongga agar tidak vakum/lengket saat tempe dilepas ke ancak.
+* **Rel Selip Ancak (*L-Channel*):** Terpasang di tepi kiri & kanan cetakan (tinggi profil hanya `24 mm`, di dalam lebar `660 mm`), dilengkapi stopper belakang dan palang pengunci depan bermagnet (`2× Elektromagnet P25/20 = 16 kgf`).
+* **Motor Getar DC 12V (*Vibro-Levelling*):** Dibaut tepat di tengah bawah tulang penguat cetakan (`Y = 521 mm`).
 
 ---
 
-## 4. Mekanisme Pembalikan Rotari 180° (Flip Mold)
+## 3. Elevasi Kritis & Bukti Clearance Zero-Collision
 
-```
-DIAGRAM TRANSMISI ROTASI CETAKAN (Tampak Sisi Kiri Frame):
-
-            [Tiang Rangka Kiri]
-                     │
-    h=50cm  [Motor Stepper NEMA 23]
-                     │ (Shaft Ø6.35mm)
-            [Pulley 20T HTD3M]
-                     │
-                     │  ◄── Timing Belt HTD3M (Panjang ~700mm, Lebar 15mm)
-                     │
-    h=55cm  [Pulley 60T HTD3M] (Bore 20mm)
-                     │
-            [Bearing Flange UCFL 204]
-                     │
-            [Poros As Pejal Ø20mm] ════════► Terhubung ke Cetakan 6-Slot SS304
-```
-
-### Parameter Kinematika Rotasi:
-* **Rasio Reduksi Gigi:** $20\text{T} : 60\text{T} = 1 : 3$.
-* **Torsi Efektif As:** $1.9\text{ Nm (motor)} \times 3 = 5.7\text{ Nm}$ (sangat memadai untuk memutar cetakan seberat ~5 kg).
-* **Langkah Putar 180°:**
-  $$\text{Steps} = \frac{200 \times 8 \times 3}{2} = 2400 \text{ langkah}$$
-* **Waktu Rotasi:** Kecepatan diatur 800 step/detik dengan akselerasi 400 step/detik² → durasi putar 180° berkisar **3.5–4.0 detik** (sangat mulus tanpa goncangan).
-* **Elektromagnet Pengunci:** 2 unit elektromagnet 12V (masing-masing gaya tarik 10 kg) dipasang di bibir flange depan cetakan untuk mengunci 6 penutup cetakan secara serentak selama rotasi berlangsung.
+| Ketinggian (`Y` dari dasar hollow) | Komponen / Zona | Keterangan Clearance |
+|---:|:---|:---|
+| `-40 .. 0 mm` | 4× Kaki Karet Leveling M10 | Anti-getar & rata lantai |
+| `160 .. 204 mm` | Rak Bawah (Panel ABS kiri, PSU kanan, Dudukan Mini Actuator tengah) | Terlindung dari air & kedelai |
+| `445 mm` | **Laci Elevator posisi BAWAH** (`Y_atas = 445`) | Puncak tempe `Y = 497` → **clearance `+45 mm`** di bawah dinding cetakan (`Y = 542`)! |
+| `520 mm` | **Laci Elevator posisi ATAS** (`+75 mm` naik) | Menempel rapat di bawah Ancak saat terbalik 180° (`Y = 524`, **gap cuma 4 mm!**) |
+| `560 mm` | **Poros Rotasi Flip 180°** (`Z = 200`, dibaut mati ke palang samping) | Sapuan Flip `R = 135 mm` (`Y = 425..695`, `Z = 65..335`) — **bebas palang depan!** |
+| `625 .. 695 mm` | **Lintasan Kotak Takar Memanjang (`58×200×70 mm`)** | `+47 mm` di atas cetakan (`578`), `-55 mm` di bawah Press HOME (`750`) |
+| `750 mm` | **Press HOME (sisi bawah Pad Silikon)** | **`+55 mm` bebas di atas sapuan Flip `695 mm`**! |
+| `550 mm` | **Press BAWAH (Limit Switch Bawah)** | Travel `200 mm` (**Linear Actuator Stroke 200 mm**), ketebalan akhir balok `~35 mm` |
+| `1100 mm` | Palang Atas Actuator, Guide Shaft (`Z=265`), & Penopang Hopper (`Z=360 & 560`) | Panjang tertutup actuator pin-to-pin `325 mm` (`775 → 1100`) pas eksak |
 
 ---
 
-## 5. Mekanisme Pengepresan Vertikal (Dual Lead Screw T8)
+## 4. Transmisi Rotasi Flip 180° (NEMA 23)
 
-```
-TAMPAK MEKANISME PRESS:
-
-   [Motor DC Gearbox 12V High Torque]
-                 │
-   [Shaft Coupler Fleksibel] ──► [Poros Penghubung Horizontal]
-        ┌────────┴────────┐
-        ▼                 ▼
-   [Lead Screw T8]   [Lead Screw T8]   (Panjang 300mm, Pitch 2mm, Kiri-Kanan)
-        │                 │
-   [Nut Kuningan]    [Nut Kuningan]
-        └────────┬────────┘
-                 ▼
-   [Pelat Gantry Aluminium 5mm (59.0 × 15.0 cm)]
-   [6 Pad Penekan Aluminium / Karet Food-Grade]
-```
-
-### Parameter Pengepresan:
-* **Stroke Gerak Vertikal:** Maksimal 12 cm (dari h=85cm turun ke h=73cm).
-* **Sensor Batas (Endstop):**
-  - **Limit Switch Atas (GPIO 32):** Posisi istirahat (*home*) saat cetakan berputar atau saat dosing.
-  - **Limit Switch Bawah (GPIO 33):** Posisi tekanan penuh. Motor berhenti dan menahan tekanan statis selama 5 detik.
-* **Kecepatan Turun:** Sekitar 10–12 mm/detik → waktu penekanan turun sekitar 6–8 detik.
-
----
-
-## 6. Corong Kedelai (Hopper) & Pintu Dosing
-
-```
-DIMENSI CORONG HOPPER SS304:
-- Panjang atas    : 60.0 cm
-- Lebar atas      : 25.0 cm
-- Tinggi corong   : 30.0 cm
-- Sudut kemiringan: 60° (mencegah kedelai basah tersangkut di dinding corong)
-- Kapasitas isi   : ±10–12 kg kedelai rebus
-
-SISTEM DISTRIBUSI (6 CABANG Y-FORK):
-- Pipa stainless Ø38 mm (1.5 inchi)
-- 6 lubang outlet dengan jarak pitch 8.5 cm center-to-center
-- 1 plat pintu geser aluminium 3mm (panjang 62cm × lebar 4cm)
-- Digerakkan oleh 1 Solenoid Push-Pull 12V dengan pegas pengembali (*spring return*)
-```
-
----
-
-## 7. Panduan Pemotongan Bahan untuk Bengkel Las
-
-### Kebutuhan Besi Hollow 40×40×2.0 mm (Total ±12 Meter):
-1. **Kaki Vertikal:** 4 batang × 130 cm = 520 cm
-2. **Palang Horizontal (Lebar):** 6 batang × 90 cm = 540 cm
-3. **Palang Samping (Kedalaman):** 4 batang × 40 cm = 160 cm
-   *(Total: 1.220 cm ≈ 12.2 meter atau 2 batang standar 6 meter)*
-
-### Kebutuhan Poros & Plat:
-1. **As Baja / SS Pejal Ø20mm:** 1 batang × 65 cm
-2. **Plat Aluminium 5mm:** 1 lembar 60 × 15 cm (Gantry press)
-3. **Plat Aluminium 3mm:** 1 lembar 70 × 30 cm (Pintu geser & 6 tutup cetakan)
-4. **Plat SS304 1.0mm:** 1 lembar 80 × 60 cm (Hopper & Y-Fork)
+* **Motor:** NEMA 23 `23HS5628` (Shaft `Ø8 mm`, 2.8A) terpasang pada **Bracket Baja L-Shape** di sisi kiri rangka (`Y = 464, Z = 122`).
+* **Reduksi:** Pulley `20T` (Bore `8 mm`) → Pulley `60T` (Bore `20 mm`), rasio **`1 : 3`**.
+* **Jarak antar pusat poros (`C`):** $\sqrt{78^2 + 96^2} \approx 123.7\text{ mm}$ → **Timing Belt HTD3M-384 / HTD3M-390 (lebar 15 mm)**.
+* **Pulsa 180° (1/8 Microstep di TB6600):** `200 × 8 × 3 / 2 = 2400 steps`.

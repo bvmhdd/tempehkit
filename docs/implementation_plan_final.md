@@ -93,18 +93,18 @@ TAMPAK ATAS CETAKAN STAINLESS STEEL 304 (59.1 × 24 cm):
 - Sensor Load Cell Bar-Type 20kg + Modul HX711 dipasang di bawah dudukan penimbang cetakan untuk memonitor berat kumulatif secara real-time hingga mencapai nilai setpoint.
 
 ### 4.2 Mekanisme Pembalikan Rotari 180° (Flip Mold Ejection)
-- **Motor Penggerak:** Stepper Motor NEMA 23 (57BYG, arus 2.8A, torsi 1.9 Nm) dikendalikan driver microstepping TB6600 4A.
-- **Rasio Transmisi:** Timing Belt HTD3M menghubungkan pulley 20T (pada shaft motor Ø6.35mm) ke pulley 60T (pada as cetakan Ø20mm) → rasio reduksi 1:3.
+- **Motor Penggerak:** Stepper Motor NEMA 23 tipe **23HS5628** (arus 2.8A, torsi 1.9 Nm, **poros shaft Ø8mm**) dikendalikan driver microstepping TB6600 4A.
+- **Rasio Transmisi:** Timing Belt HTD3M menghubungkan pulley 20T (**Bore Ø8mm**) ke pulley 60T (pada as cetakan Ø20mm) → rasio reduksi 1:3.
 - **Kalkulasi Langkah (Steps):**
   $$\text{Steps}_{180^\circ} = \frac{200 \text{ steps/rev} \times 8 \text{ microsteps} \times 3 \text{ (rasio)}}{2} = 2400 \text{ steps}$$
 - **Poros Rotasi:** As baja stainless steel pejal Ø20mm panjang 65cm, ditumpu oleh 2 unit Pillow/Flange Bearing UCFL 204 pada kedua sisi frame.
-- **Pengunci Tutup Elektromagnet:** Dua unit Solenoid Elektromagnet 12V (masing-masing tarikan 10 kg) terhubung ke Relay GPIO 13 untuk mengunci pelat penutup saat mold berputar.
+- **Pengunci Tutup Elektromagnet:** Dua unit Solenoid Elektromagnet 12V tipe **P25/20** (masing-masing gaya angkat 8 kg, total 16 kg) terhubung ke Relay GPIO 13 untuk mengunci pelat penutup saat mold berputar.
 
-### 4.3 Mekanisme Pengepresan (Dual Lead Screw T8)
+### 4.3 Mekanisme Pengepresan (Linear Actuator 12V 1500N)
 - Pelat gantry penekan berbahan aluminium 5mm (panjang 59 cm) dengan 6 pad penekan.
-- Digerakkan oleh 2 buah Lead Screw T8 (pitch 2mm) pada sisi kiri dan kanan untuk menjamin tekanan yang rata tanpa distorsi torsi.
-- Motor penggerak: Motor DC Gearbox 12V 60RPM High Torque dengan driver L298N.
-- Dilengkapi 2 sakelar mikro pembatas (Limit Switch Atas GPIO 32 dan Limit Switch Bawah GPIO 33).
+- Digerakkan oleh **Linear Actuator 12V Stroke 10 cm (1500N, 6 mm/s)** untuk gaya dorong masif (±153 kgf) yang rata, higienis, dan terlindung di dalam tabung silinder.
+- Pengendali: Driver Motor L298N (output paralel 4A) atau modul Relay 2-Channel 12V.
+- Dilengkapi limit switch internal aktuator serta 2 sakelar mikro eksternal (Limit Switch Atas GPIO 32 dan Limit Switch Bawah GPIO 33).
 
 ### 4.4 Sistem Kendali IoT & Web Dashboard
 - ESP32 bertindak sebagai Web Server mandiri (menggunakan WiFi Access Point atau koneksi router lokal).
@@ -170,13 +170,11 @@ TAMPAK DEPAN RANGKA (Lebar 90cm × Tinggi 130cm × Kedalaman 40cm):
 2. Poros As Baja Stainless Ø20mm panjang 65cm — Rp 60.000
 3. Plat Aluminium 5mm (60×15cm) untuk Press Plate — Rp 130.000
 4. Plat Aluminium 3mm (70×30cm) untuk Gate & Tutup — Rp 70.000
-5. Lead Screw T8 300mm + Brass Nut (2 unit) — Rp 90.000
+5. Bracket U-Clevis Dudukan Linear Actuator 12V — Rp 30.000
 6. Timing Belt HTD3M lebar 15mm panjang ~700mm — Rp 35.000
-7. Pulley 20T HTD3M Bore 6.35mm — Rp 20.000
+7. Pulley 20T HTD3M Bore 8mm (Sesuai NEMA 23HS5628) — Rp 20.000
 8. Pulley 60T HTD3M Bore 20mm — Rp 40.000
 9. Bearing Flange UCFL 204 (20mm) (2 unit) — Rp 50.000
-10. Bearing 608ZZ Tumpuan Lead Screw (4 unit) — Rp 20.000
-11. Shaft Coupler Fleksibel Motor ke Lead Screw — Rp 35.000
 12. Engsel Baja 2 Inchi untuk Tutup Slot (12 unit) — Rp 36.000
 13. Baut, Mur, dan Ring Set Komplit — Rp 50.000
 14. Kaki Karet Peredam Rangka M10 (4 unit) — Rp 32.000

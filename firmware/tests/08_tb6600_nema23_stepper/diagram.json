@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "author": "Antigravity - TempehKit v9 NEMA 23 + TB6600 (USB + PSU 12V)",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp32",
+      "top": 80,
+      "left": -180,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-a4988",
+      "id": "tb6600",
+      "top": -100,
+      "left": 250,
+      "attrs": { "label": "Driver TB6600 (PUL/DIR)" }
+    },
+    {
+      "type": "wokwi-stepper-motor",
+      "id": "nema23",
+      "top": -260,
+      "left": 450,
+      "attrs": { "label": "Motor Stepper NEMA 23 (Flip 180°)" }
+    }
+  ],
+  "connections": [
+    ["esp32:TX", "$serialMonitor:RX", "", []],
+    ["esp32:RX", "$serialMonitor:TX", "", []],
+
+    ["tb6600:RESET", "tb6600:SLEEP", "yellow", []],
+
+    ["esp32:12", "tb6600:STEP", "purple", []],
+    ["esp32:14", "tb6600:DIR", "purple", []],
+
+    ["esp32:GND.1", "tb6600:GND", "black", []],
+    ["esp32:5V", "tb6600:VDD", "red", []],
+    ["esp32:5V", "tb6600:VMOT", "blue", []],
+
+    ["tb6600:1B", "nema23:B-", "green", []],
+    ["tb6600:1A", "nema23:B+", "orange", []],
+    ["tb6600:2A", "nema23:A+", "yellow", []],
+    ["tb6600:2B", "nema23:A-", "blue", []]
+  ],
+  "serialMonitor": {
+    "display": "always"
+  }
+}

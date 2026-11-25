@@ -32,8 +32,30 @@ Referensi/
 docs/implementation_plan_v*.md
 docs/Penjelasan Lengkap.md
 
-# Superseded / Unselected Variant Assets
+# Local Debug / Cropped Scratch Images in Repo Root
+/crop_*.png
+/esp32_breadboard.png
+/esp_pins.png
+/im1_rot.png
+/on_text.png
+/switch_im*.png
+
+# Superseded / Unselected Variant Assets & Old CAD Drafts (tetap aman di lokal)
 assets/*_opsi1*
 assets/*_v5*
 assets/slide_stages_detail.jpg
 assets/slide_mechanism_detail.jpg
+cad/v2_*
+cad/cetakan_6slot_detail.*
+cad/mesin_pencetak_tempe_v9_assembly.*
+cad/diagram_mekanik_crosssection.png
+cad/generate_autocad_drawings.py
+cad/generate_cross_section.py
+cad/generate_v2.py
+cad/prompt*.md
+cad/prompts_*.md
+cad/viewer_3d_v10.html
+cad/viewer_3d_v11.html
+cad/viewer_3d_v12.html
+cad/v10_rangka_*
+cad/v11_arsitektur_hibrida.*

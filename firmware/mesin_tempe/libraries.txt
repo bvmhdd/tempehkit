@@ -1,4 +1,5 @@
-# Wokwi Library Dependencies for TempehKit v9
+# Library Dependencies for TempehKit v10
 HX711
 AccelStepper
 ArduinoJson
+ESP32Servo

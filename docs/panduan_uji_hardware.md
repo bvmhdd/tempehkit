@@ -1,209 +1,170 @@
-# 🔬 Panduan Pengujian Hardware & Elektronik Sebelum Las
-### Proyek: Mesin Pencetak Tempe Otomatis berbasis ESP32
-**Status Dokumen:** PANDUAN KERJA MEJA (BENCHTOP TEST GUIDE) &bull; Revisi 1.0
+# 🔬 Panduan Pengujian Hardware Meja (Benchtop Test Guide) v9.0
+### Proyek: Mesin Pencetak Tempe Otomatis berbasis ESP32 (Arsitektur Final v9)
+**Status Dokumen:** PANDUAN KERJA MEJA &bull; Revisi 2.0 (Linear Actuator + NEMA 23 + TB6600 + Servo Gate)
 
 ---
 
-## 🎯 Mengapa Harus Uji Coba Sebelum Rangka Dilas?
+## 🎯 Mengapa Uji Coba Meja (Bench Testing) Sangat Krusial?
 
-Melakukan uji coba mandiri terhadap setiap modul elektronik di atas meja kerja (*Bench Testing*) sebelum proses pengelasan rangka besi adalah langkah terbaik dalam rekayasa mekatronika:
-
-1. **Jaminan Komponen Normal:** Memastikan semua barang belanjaan dari e-commerce (Shopee/Tokopedia) berfungsi normal sebelum masa komplain/garansi toko habis.
-2. **Kesesuaian Torsi Motor:** Memverifikasi arah putar dan kekuatan torsi motor DC 12V sebelum dudukan bracket dilas mati ke tiang mesin.
-3. **Mencegah Kerusakan Fatal:** Menguji fungsi *safety interlock* (limit switch pemutus otomatis) di atas meja sehingga saat dipasang di mesin nyata, motor tidak akan menabrak rangka atau meremukkan komponen.
-4. **Pola Pikir Lebih Rileks:** Memahami logika kerja sistem dari layar Serial Monitor secara santai di meja tanpa debu bengkel las.
-
----
-
-## 🧰 Alat & Bahan yang Disiapkan di Meja Kerja
-
-| No | Peralatan / Bahan | Fungsi & Catatan |
-| :---: | :--- | :--- |
-| 1 | **Breadboard (Project Board)** | Tempat merangkai komponen tanpa perlu disolder terlebih dahulu |
-| 2 | **Kabel Jumper** (M-M, M-F, F-F) | Min. 20 pcs untuk menghubungkan kaki modul |
-| 3 | **Kabel Data USB ke ESP32** | Menghubungkan ESP32 ke laptop/komputer untuk upload program |
-| 4 | **Adaptor Power Supply 12V 5A** | Sumber daya utama untuk motor DC 12V dan driver L298N |
-| 5 | **Step-Down LM2596** | Menurunkan 12V dari adaptor menjadi tepat 5.0V untuk ESP32 & sensor |
-| 6 | **Multimeter Digital** | Wajib untuk mengukur tegangan output step-down sebelum dicolok ke ESP32 |
-| 7 | **Resistor 10k&Omega; (2 pcs)** | Resistor Pull-Up eksternal untuk tombol START (GPIO 34) & STOP (GPIO 35) |
-| 8 | **Resistor 220&Omega; (2 pcs)** | Pembatas arus untuk LED status Hijau & Merah |
-| 9 | **Benda Uji Kalibrasi** | Botol air mineral 500 ml (500 gram) atau 1 liter (1000 gram) / gula pasir |
+Sebelum rangka besi dilas dan komponen dipasang permanen, lakukan pengujian mandiri setiap modul di atas meja kerja:
+1. **Verifikasi Barang:** Memastikan komponen e-commerce (ESP32, Driver TB6600, Linear Actuator, NEMA 23, Load Cell, Servo, Solenoid) normal sebelum batas garansi toko berakhir.
+2. **Kesesuaian Arah & Batas Gerak:** Mengonfirmasi arah dorong Linear Actuator dan putaran NEMA 23 agar tidak terbalik saat dipasang pada mekanik.
+3. **Validasi Safety Cut-Off:** Memastikan Limit Switch langsung menghentikan aktuator seketika saat tersentuh.
+4. **Kalibrasi Timbangan:** Mendapatkan nilai faktor kalibrasi HX711 nyata menggunakan beban referensi (air mineral/gula pasir).
 
 ---
 
-## ⚡ Peringatan Keselamatan Penting (Golden Rules)
+## ⚡ 3 Aturan Emas Keselamatan Elektronik (Golden Rules)
 
 > [!CAUTION]
-> **1. SETEL STEP-DOWN SEBELUM COLOK KE ESP32:**
-> Putar trimpot kecil pada modul LM2596 sambil diukur dengan multimeter sampai layar multimeter menunjukkan **tepat 5.0V**. Jangan pernah menyambungkan LM2596 ke ESP32 sebelum tegangan terukur stabil di 5.0V!
+> **1. SETEL TEGANGAN STEP-DOWN LM2596 SEBELUM COLOK ESP32!**
+> Putar trimpot kecil LM2596 sambil diukur multimeter hingga tegangan output stabil tepat di **5.0V**. Jangan pernah menyambungkan LM2596 ke pin 5V/VIN ESP32 sebelum terukur 5.0V, karena lonjakan tegangan 12V akan langsung membakar chip ESP32!
 >
 > **2. ATURAN COMMON GROUND (GND BERSAMA):**
-> GND dari Adaptor 12V, GND dari modul LM2596, GND dari Driver L298N, dan GND dari ESP32 **WAJIB DIHUBUNGKAN MENJADI SATU KESATUAN JALUR (COMMON GND)**. Jika tidak terhubung bersama, logika kontrol motor tidak akan bekerja!
+> Seluruh jalur GND (Negatif PSU 12V, GND LM2596, GND L298N, GND TB6600, GND Servo, dan GND ESP32) **WAJIB DIHUBUNGKAN MENJADI SATU KESATUAN JALUR (COMMON GND)**. Jika tidak, sinyal kontrol akan floating / motor bergerak liar.
 >
-> **3. KHUSUS GPIO 34 & 35 (PIN INPUT ONLY):**
-> Pin GPIO 34 dan GPIO 35 pada ESP32 tidak memiliki resistor pull-up internal. Oleh karena itu, pasanglah resistor 10k&Omega; eksternal dari pin tersebut ke pin 3.3V ESP32.
+> **3. RESISTOR PULL-UP TOMBOL START & STOP (GPIO 34 & 35):**
+> Pin GPIO 34 dan 35 pada ESP32 adalah *input-only* tanpa pull-up internal. Wajib pasang resistor 10kΩ eksternal dari pin tersebut ke 3.3V ESP32.
 
 ---
 
-## 📋 7 Tahap Pengujian Modular Bertahap
+## 📌 Peta Pinout ESP32 v9 (Acuan Pengujian)
 
-Semua file kode uji coba sudah disediakan di dalam folder:  
-📍 [`firmware/tests/`](file:///c:/Users/muhib/OneDrive/Dokumen/IOT%20Tempe/firmware/tests/)
-
-```
-firmware/tests/
-├── 01_i2c_scanner_lcd/
-│   └── 01_i2c_scanner_lcd.ino
-├── 02_hx711_loadcell_calibration/
-│   └── 02_hx711_loadcell_calibration.ino
-├── 03_hcsr04_ultrasonic/
-│   └── 03_hcsr04_ultrasonic.ino
-├── 04_buttons_and_limitswitches/
-│   └── 04_buttons_and_limitswitches.ino
-├── 05_motor_l298n_leadscrew/
-│   └── 05_motor_l298n_leadscrew.ino
-├── 06_buzzer_relay_gate/
-│   └── 06_buzzer_relay_gate.ino
-└── 07_bench_system_mock_test/
-    └── 07_bench_system_mock_test.ino
-```
+| Komponen | Pin ESP32 | Mode | Keterangan |
+|---|:---:|:---:|---|
+| **Load Cell HX711 (DOUT)** | GPIO 4 | Input | Jalur Data timbangan |
+| **Load Cell HX711 (SCK)** | GPIO 5 | Output | Jalur Clock timbangan |
+| **Linear Actuator (IN1)** | GPIO 25 | Output | Kendali L298N: Dorong Turun (Press) |
+| **Linear Actuator (IN2)** | GPIO 26 | Output | Kendali L298N: Tarik Naik (Homing) |
+| **Servo Gate Hopper** | GPIO 27 | Output (PWM) | Kendali Sudut Pintu Geser Hopper (0° - 90°) |
+| **Relay Elektromagnet** | GPIO 13 | Output | Pengunci Tutup Cetakan (Aktif HIGH) |
+| **NEMA 23 (STEP)** | GPIO 12 | Output | Pulsa Langkah TB6600 (PUL-) |
+| **NEMA 23 (DIR)** | GPIO 14 | Output | Arah Putar TB6600 (DIR-) |
+| **Limit Switch Atas** | GPIO 32 | Input Pull-Up | Batas Homing Press (Aktif LOW) |
+| **Limit Switch Bawah** | GPIO 33 | Input Pull-Up | Batas Kedalaman Press (Aktif LOW) |
+| **Tombol START** | GPIO 34 | Input (Ext Pull-Up 10k) | Pemicu Siklus Otomatis |
+| **Tombol STOP** | GPIO 35 | Input (Ext Pull-Up 10k) | Pemicu Berhenti Darurat |
+| **LED Hijau (OK/RUN)** | GPIO 2 | Output | Indikator Berjalan |
+| **LED Merah (ALARM)** | GPIO 15 | Output | Indikator Bahaya/Berhenti |
+| **Buzzer Aktif 5V** | GPIO 23 | Output | Notifikasi Suara Beep |
 
 ---
 
-### 🟢 Tahap 1: Uji Layar LCD 16×2 + I2C Adapter
-* **Program:** [`01_i2c_scanner_lcd.ino`](file:///c:/Users/muhib/OneDrive/Dokumen/IOT%20Tempe/firmware/tests/01_i2c_scanner_lcd/01_i2c_scanner_lcd.ino)
-* **Wiring:**
-  * LCD `GND` &rarr; ESP32 `GND`
-  * LCD `VCC` &rarr; ESP32 `VIN` (5V)
-  * LCD `SDA` &rarr; ESP32 `GPIO 21`
-  * LCD `SCL` &rarr; ESP32 `GPIO 22`
+## 🧪 7 Tahapan Pengujian Mandiri Satu per Satu
+
+---
+
+### 🟢 Uji 1: Penyetelan Power Supply 12V 10A & Step-Down LM2596
+* **Alat:** PSU 12V 10A, LM2596, Multimeter Digital, Obeng Minus kecil.
 * **Langkah:**
-  1. Buka Arduino IDE, buka file sketch Tahap 1, pilih board **ESP32 Dev Module**, lalu Upload.
-  2. Buka **Serial Monitor** (kecepatan baud rate: **115200**).
-  3. Perhatikan alamat yang terdeteksi (umumnya `0x27` atau `0x3F`).
-  4. Layar LCD akan menyala dan menampilkan teks: `"TEST LCD I2C OK!"`.
-* **Troubleshooting:**
-  * *Lampu LCD menyala biru/hijau tapi tidak ada tulisan?* Ambil obeng minus kecil, putar potensiometer biru di belakang modul I2C untuk mengatur kontras huruf!
+  1. Hubungkan input LM2596 (`IN+` dan `IN-`) ke terminal `+12V` dan `COM/GND` pada PSU 12V.
+  2. Colokkan kabel steker PSU ke listrik PLN 220V.
+  3. Tempelkan probe multimeter (mode DC Volt) pada terminal output LM2596 (`OUT+` dan `OUT-`).
+  4. Putar potensiometer obeng kecil berlawanan arah jarum jam secara perlahan hingga voltmeter membaca **tepat 5.00V – 5.10V**.
+  5. Matikan PSU. Output 5V ini aman digunakan untuk memberi daya ESP32 (pin VIN), Modul Relay, HX711, dan Servo.
 
 ---
 
-### 🟢 Tahap 2: Uji Sensor Berat Load Cell 10kg + HX711
-* **Program:** [`02_hx711_loadcell_calibration.ino`](file:///c:/Users/muhib/OneDrive/Dokumen/IOT%20Tempe/firmware/tests/02_hx711_loadcell_calibration/02_hx711_loadcell_calibration.ino)
-* **Wiring Modul HX711 ke ESP32:**
-  * HX711 `VCC` &rarr; 5V
-  * HX711 `GND` &rarr; GND
-  * HX711 `DT`  &rarr; ESP32 `GPIO 4`
-  * HX711 `SCK` &rarr; ESP32 `GPIO 5`
-* **Wiring Kabel Bar Sensor ke Modul HX711:**
-  * Merah &rarr; `E+`
-  * Hitam &rarr; `E-`
-  * Putih &rarr; `A-`
-  * Hijau &rarr; `A+`
-* **Langkah Kalibrasi Interaktif:**
-  1. Upload program dan buka Serial Monitor (115200 baud).
-  2. Sensor akan melakukan *Tare* otomatis (nol-kan nilai saat kosong).
-  3. Letakkan benda yang diketahui beratnya di atas bar load cell (misal: botol air 500 gram atau gula pasir 1000 gram).
-  4. Ketik huruf `c` di Serial Monitor, lalu masukkan angka berat benda (misal: `500`), tekan Enter.
-  5. Program akan otomatis menghitung nilai faktor kalibrasi (misal: `418.5`).
-  6. **Catat angka ini!** Nilai ini akan dimasukkan ke baris `#define LOADCELL_FAKTOR` di firmware utama.
+### 🟢 Uji 2: ESP32 + Tombol Fisik + LED + Buzzer
+* **Tujuan:** Memverifikasi ESP32 dapat membaca input tombol dan menyalakan indikator visual/suara.
+* **Rangkaian:**
+  * Tombol START: Kaki 1 ke `GPIO 34` & Resistor 10kΩ ke `3.3V`, Kaki 2 ke `GND`.
+  * Tombol STOP: Kaki 1 ke `GPIO 35` & Resistor 10kΩ ke `3.3V`, Kaki 2 ke `GND`.
+  * LED Hijau: Anoda ke `GPIO 2` seri resistor 220Ω, Katoda ke `GND`.
+  * LED Merah: Anoda ke `GPIO 15` seri resistor 220Ω, Katoda ke `GND`.
+  * Buzzer: Positif ke `GPIO 23`, Negatif ke `GND`.
+* **Program Pengujian:** [`firmware/tests/04_buttons_and_limitswitches/04_buttons_and_limitswitches.ino`](file:///c:/Users/muhib/OneDrive/Dokumen/IOT%20Tempe/firmware/tests/04_buttons_and_limitswitches/04_buttons_and_limitswitches.ino)
+* **Kriteria Sukses:**
+  * Tekan START: LED Hijau menyala, Buzzer berbunyi bip pendek, Serial Monitor mencetak: `[EVENT] START DITEKAN`.
+  * Tekan STOP: LED Merah menyala, Buzzer berbunyi bip panjang, Serial Monitor mencetak: `[EVENT] STOP DITEKAN`.
 
 ---
 
-### 🟢 Tahap 3: Uji Sensor Jarak Ultrasonic HC-SR04 (Hopper Kedelai)
-* **Program:** [`03_hcsr04_ultrasonic.ino`](file:///c:/Users/muhib/OneDrive/Dokumen/IOT%20Tempe/firmware/tests/03_hcsr04_ultrasonic/03_hcsr04_ultrasonic.ino)
-* **Wiring:**
-  * HC-SR04 `VCC`  &rarr; 5V
-  * HC-SR04 `GND`  &rarr; GND
-  * HC-SR04 `TRIG` &rarr; ESP32 `GPIO 18`
-  * HC-SR04 `ECHO` &rarr; ESP32 `GPIO 19`
+### 🟢 Uji 3: Sensor Berat Load Cell 20kg + Modul HX711
+* **Tujuan:** Menguji akurasi timbangan dan mencari faktor kalibrasi gram.
+* **Rangkaian:**
+  * Kabel Load Cell: Merah (`E+`), Hitam (`E-`), Putih (`A-`), Hijau (`A+`) ke modul HX711.
+  * Modul HX711 ke ESP32: `VCC` ke 5V, `GND` ke GND, `DT` ke `GPIO 4`, `SCK` ke `GPIO 5`.
+* **Program Pengujian:** [`firmware/tests/02_hx711_loadcell_calibration/02_hx711_loadcell_calibration.ino`](file:///c:/Users/muhib/OneDrive/Dokumen/IOT%20Tempe/firmware/tests/02_hx711_loadcell_calibration/02_hx711_loadcell_calibration.ino)
 * **Langkah:**
-  1. Upload program dan buka Serial Monitor.
-  2. Gerakkan tangan atau buku mendekat (5 cm) dan menjauh (25 cm) di depan kedua mata sensor.
-  3. Serial Monitor akan menampilkan jarak nyata dan estimasi persentase kapasitas hopper.
-  4. Jika jarak > 20 cm, status berubah menjadi `[ALARM: KEDELAI HAMPIR HABIS!]`.
+  1. Upload program, buka Serial Monitor (115200 baud).
+  2. Saat sensor kosong, pembacaan harus stabil di sekitar 0.00 gram.
+  3. Letakkan benda yang diketahui beratnya (misal: botol air 500g atau 1000g).
+  4. Ketik `c` di Serial Monitor, ketik berat benda (misal: `500`), lalu tekan Enter.
+  5. Program akan menghitung nilai faktor kalibrasi (misal: `420.5`). **Catat angka ini!**
 
 ---
 
-### 🟢 Tahap 4: Uji Tombol Fisik & Limit Switch
-* **Program:** [`04_buttons_and_limitswitches.ino`](file:///c:/Users/muhib/OneDrive/Dokumen/IOT%20Tempe/firmware/tests/04_buttons_and_limitswitches/04_buttons_and_limitswitches.ino)
-* **Wiring:**
-  * Tombol START &rarr; Pin `GPIO 34` (dengan resistor pull-up 10k&Omega; ke 3.3V, kaki lainnya ke GND)
-  * Tombol STOP  &rarr; Pin `GPIO 35` (dengan resistor pull-up 10k&Omega; ke 3.3V, kaki lainnya ke GND)
-  * Limit Switch ATAS  &rarr; Pin `GPIO 32` & GND
-  * Limit Switch BAWAH &rarr; Pin `GPIO 33` & GND
-  * LED Hijau (OK)     &rarr; Pin `GPIO 2` seri resistor 220&Omega; ke GND
-  * LED Merah (Alarm)  &rarr; Pin `GPIO 15` seri resistor 220&Omega; ke GND
+### 🟢 Uji 4: Servo Pintu Dosing Kedelai (Hopper Gate)
+* **Tujuan:** Memastikan servo bergerak mulus membuka dan menutup pintu corong tanpa getaran berlebih.
+* **Rangkaian:**
+  * Kabel Cokelat/Hitam (GND) &rarr; Common GND
+  * Kabel Merah (VCC) &rarr; Output 5V LM2596 *(Jangan ambil dari pin 3.3V ESP32!)*
+  * Kabel Oranye/Kuning (Signal) &rarr; ESP32 `GPIO 27`
+* **Skrip Uji Cepat (ESP32Servo):**
+  * Posisi 0°: Pintu corong tertutup rapat.
+  * Posisi 90°: Pintu corong terbuka penuh mengalirkan kedelai ke cetakan.
+* **Kriteria Sukses:** Servo merespons perintah buka (90°) saat dosing dimulai, dan langsung menutup rapat (0°) saat berat target tercapai.
+
+---
+
+### 🟢 Uji 5: Linear Actuator 12V (1500N) + Driver L298N + Limit Switch
+* **Tujuan:** Menguji dorongan turun, tarikan naik, dan proteksi pemutus otomatis (*Safety Interlock*).
+* **Rangkaian:**
+  * Terminal L298N: `12V` ke PSU +12V, `GND` ke Common GND.
+  * Logic Pins: `IN1` ke `GPIO 25`, `IN2` ke `GPIO 26`.
+  * Output Motor: `OUT1` & `OUT2` ke 2 kabel Linear Actuator 12V.
+  * Limit Switch Atas: Satu pin ke `GPIO 32`, pin lainnya ke `GND`.
+  * Limit Switch Bawah: Satu pin ke `GPIO 33`, pin lainnya ke `GND`.
+* **Program Pengujian:** [`firmware/tests/05_motor_l298n_leadscrew/05_motor_l298n_leadscrew.ino`](file:///c:/Users/muhib/OneDrive/Dokumen/IOT%20Tempe/firmware/tests/05_motor_l298n_leadscrew/05_motor_l298n_leadscrew.ino)
+* **Langkah Safety Check:**
+  1. Ketik `d` (down) di Serial Monitor &rarr; Silinder piston aktuator memanjang keluar (menekan).
+  2. Tekan tuas Limit Switch Bawah dengan tangan &rarr; **Aktuator harus langsung BERHENTI SEKETIKA!**
+  3. Ketik `u` (up) di Serial Monitor &rarr; Silinder piston memendek masuk (menarik ke atas).
+  4. Tekan tuas Limit Switch Atas dengan tangan &rarr; **Aktuator harus langsung BERHENTI SEKETIKA!**
+
+---
+
+### 🟢 Uji 6: Stepper NEMA 23 (2.8A) + Driver TB6600 (Rotasi Flip 180°)
+* **Tujuan:** Memverifikasi kehalusan putaran 180° dan torsi penahan motor tanpa getaran berlebih.
+* **Setting DIP Switch TB6600:**
+  * **Microstep (1/8 Microstepping):** S1=OFF, S2=OFF, S3=ON (1600 pulse/rev).
+  * **Current Limit (2.8A - 3.0A):** S4=OFF, S5=ON, S6=ON.
+* **Rangkaian TB6600:**
+  * `VCC` & `GND` &rarr; Hubungkan ke PSU +12V dan COM GND.
+  * `A+`, `A-`, `B+`, `B-` &rarr; 4 kabel NEMA 23 (Merah-Hijau / Kuning-Biru sesuai datasheet).
+  * Sinyal Kontrol (Metode Common Cathode):
+    * `PUL-` & `DIR-` &rarr; Sambung ke Common GND ESP32.
+    * `PUL+` &rarr; ESP32 `GPIO 12` (Pulsa Langkah STEP).
+    * `DIR+` &rarr; ESP32 `GPIO 14` (Arah Putar DIR).
+    * `ENA+` / `ENA-` &rarr; Kosongkan (default enable).
+* **Kriteria Sukses:**
+  * Motor berputar mulus sejauh 2400 step (memutar poros as 180° dengan reduksi pulley 1:3).
+  * Motor menahan posisi dengan kokoh tanpa panas berlebih.
+
+---
+
+### 🟢 Uji 7: Solenoid Elektromagnet 12V (P25/20) + Relay
+* **Tujuan:** Menguji daya lekat cengkeraman elektromagnet penahan tutup cetakan.
+* **Rangkaian:**
+  * Modul Relay: `VCC` ke 5V, `GND` ke GND, `IN` ke `GPIO 13`.
+  * Jalur Daya Magnet: Hubungkan `+12V` PSU ke terminal `COM` Relay. Dari terminal `NO` (Normally Open) Relay masuk ke kabel positif kedua Elektromagnet (dipasang paralel). Kabel negatif elektromagnet langsung ke GND 12V.
 * **Langkah:**
-  1. Tekan tombol START &rarr; LED Hijau menyala & Serial Monitor mencetak `[EVENT] START DITEKAN`.
-  2. Tekan tombol STOP &rarr; LED Merah menyala & Serial Monitor mencetak `[EVENT] STOP DITEKAN`.
-  3. Tekan tuas roller limit switch atas/bawah &rarr; Serial Monitor langsung memberi notifikasi deteksi posisi home/maksimal.
+  1. Trigger GPIO 13 ke level `HIGH`.
+  2. Relay berbunyi *klik*, lampu indikator relay menyala.
+  3. Dekatkan pelat besi/tutup cetakan ke permukaan elektromagnet.
+  4. Cengkeraman magnet harus sangat kuat (daya tahan gabungan 16 kg). Saat GPIO 13 `LOW`, magnet langsung melepaskan pelat seketika.
 
 ---
 
-### 🟢 Tahap 5: Uji Motor DC 12V + Driver L298N & Cut-Off Otomatis
-* **Program:** [`05_motor_l298n_leadscrew.ino`](file:///c:/Users/muhib/OneDrive/Dokumen/IOT%20Tempe/firmware/tests/05_motor_l298n_leadscrew/05_motor_l298n_leadscrew.ino)
-* **Wiring:**
-  * Terminal `12V` L298N &rarr; Positif Adaptor (+12V DC)
-  * Terminal `GND` L298N &rarr; Negatif Adaptor & GND ESP32 *(Wajib Common GND!)*
-  * Pin `IN1` L298N &rarr; ESP32 `GPIO 25`
-  * Pin `IN2` L298N &rarr; ESP32 `GPIO 26`
-  * Terminal `OUT1` & `OUT2` &rarr; 2 Kabel Motor DC 12V
-  * Pasang Limit Switch Atas (GPIO 32) dan Bawah (GPIO 33)
-* **Langkah Pengujian Safety:**
-  1. Nyalakan adaptor 12V.
-  2. Ketik huruf `d` di Serial Monitor &rarr; Motor berputar searah jarum jam (turun/press).
-  3. Tekan tuas Limit Switch Bawah dengan jari &rarr; **Motor harus langsung MATI SEKETIKA (Safety Cut-Off)!**
-  4. Ketik huruf `u` di Serial Monitor &rarr; Motor berputar berlawanan arah (naik/homing).
-  5. Tekan tuas Limit Switch Atas dengan jari &rarr; **Motor harus langsung MATI SEKETIKA!**
-  6. Ketik huruf `s` kapan saja &rarr; Motor berhenti seketika.
+## 📋 Lembar Ceklis Kelayakan Pra-Perakitan (Bench Sign-Off)
 
----
-
-### 🟢 Tahap 6: Uji Buzzer & Relay Gate Hopper
-* **Program:** [`06_buzzer_relay_gate.ino`](file:///c:/Users/muhib/OneDrive/Dokumen/IOT%20Tempe/firmware/tests/06_buzzer_relay_gate/06_buzzer_relay_gate.ino)
-* **Wiring:**
-  * Buzzer &rarr; `GPIO 23` & GND
-  * Modul Relay `IN` &rarr; ESP32 `GPIO 27`, `VCC` &rarr; 5V, `GND` &rarr; GND
-* **Langkah:**
-  1. Ketik `1` &rarr; Buzzer berbunyi 2x *beep-beep* (tanda siklus normal).
-  2. Ketik `2` &rarr; Buzzer berbunyi panjang 1 detik (tanda alarm).
-  3. Ketik `r` &rarr; Relay berbunyi *klik*, lampu LED indikator relay menyala (kontak tertutup/gate buka), ketik `r` lagi untuk menutup.
-
----
-
-### 🟢 Tahap 7: Uji Simulasi Terintegrasi Meja (Dry-Run Benchtop)
-* **Program:** [`07_bench_system_mock_test.ino`](file:///c:/Users/muhib/OneDrive/Dokumen/IOT%20Tempe/firmware/tests/07_bench_system_mock_test/07_bench_system_mock_test.ino)
-* **Tujuan:** Menjalankan **1 siklus kerja mesin tempe 100% lengkap** di atas meja breadboard!
-* **Alur Simulasi:**
-  1. Layar LCD menampilkan `"MESIN TEMPE READY | TEKAN START >>"`.
-  2. Operator menekan tombol fisik START (GPIO 34).
-  3. Buzzer berbunyi 1x, LCD menampilkan `"1. MENGISI KEDELAI"`, relay gate hopper aktif selama 1.5 detik.
-  4. LCD berubah menjadi `"2. PRESS TURUN"`, motor DC berputar turun.
-  5. Operator menekan Limit Switch Bawah (GPIO 33) dengan tangan.
-  6. Motor langsung berhenti, LCD menampilkan `"3. TAHAN TEKANAN | Pemadatan 3s..."`.
-  7. Setelah 3 detik, motor otomatis berputar balik (naik), LCD menampilkan `"4. LIFT-OFF FRAME"`.
-  8. Operator menekan Limit Switch Atas (GPIO 32) dengan tangan.
-  9. Motor berhenti sempurna, buzzer berbunyi 2x *beep-beep*, LCD menampilkan `"SIKLUS SUKSES! | HASIL: 1 PAPAN"`.
-  10. Counter produksi otomatis bertambah +1 dan sistem kembali ke status READY!
-
----
-
-## 📋 Tabel Lembar Ceklis Kelayakan Hardware (Sign-Off Sheet)
-
-Beri tanda centang (&check;) setelah masing-masing pengujian berhasil:
-
-| Modul Hardware | Kriteria Lolos Uji | Hasil Uji | Tgl Cek |
-| :--- | :--- | :---: | :---: |
-| **ESP32 Microcontroller** | Terdeteksi di Arduino IDE, blink/serial monitor lancar | [ &nbsp; ] LULUS | __/__ |
-| **Layar LCD 16×2 I2C** | Alamat I2C terdeteksi, huruf kontras dan terbaca jelas | [ &nbsp; ] LULUS | __/__ |
-| **Load Cell 10kg + HX711** | Tare berhasil, pembacaan botol 500g/1000g akurat | [ &nbsp; ] LULUS | __/__ |
-| **Ultrasonic HC-SR04** | Jarak terukur stabil 5–25 cm, alarm jarak aktif | [ &nbsp; ] LULUS | __/__ |
-| **Tombol START & STOP** | Respon debouncing baik, LED status menyala sinkron | [ &nbsp; ] LULUS | __/__ |
-| **Limit Switch Atas/Bawah** | Deteksi sentuh presisi, memicu status HOME / MAX | [ &nbsp; ] LULUS | __/__ |
-| **Driver L298N & Motor DC** | Putaran turun & naik kuat, cut-off limit switch 100% pakem | [ &nbsp; ] LULUS | __/__ |
-| **Buzzer & Relay Gate** | Beep terdengar jelas, relay kontak *klik* membuka/menutup | [ &nbsp; ] LULUS | __/__ |
-| **Dry-Run Integrasi Meja** | 1 siklus penuh berjalan mulus dari start sampai counter naik | [ &nbsp; ] LULUS | __/__ |
-
-> [!TIP]
-> **Keputusan Maju ke Bengkel Las:**
-> Jika seluruh checklist di atas sudah berstatus **LULUS**, Anda bisa 100% percaya diri membawa desain rangka ke tukang las karena seluruh "otak" dan "saraf" elektrikal mesin sudah terbukti bekerja sempurna!
+| Komponen Hardware | Kriteria Lolos Pengujian | Status |
+|---|---|:---:|
+| **PSU 12V + LM2596** | Output 5.0V stabil, tidak ada drop tegangan | [ &nbsp; ] LULUS |
+| **ESP32 DevKit V1** | Terdeteksi di Arduino IDE, tombol & LED responsif | [ &nbsp; ] LULUS |
+| **Load Cell 20kg + HX711** | Pembacaan berat linier, faktor kalibrasi didapat | [ &nbsp; ] LULUS |
+| **Servo Gate 180°** | Gerak 0° - 90° mulus, tidak berdengung saat diam | [ &nbsp; ] LULUS |
+| **Linear Actuator + L298N** | Mampu maju/mundur, auto-stop limit switch 100% pakem | [ &nbsp; ] LULUS |
+| **NEMA 23 + TB6600** | Putaran microstep halus, torsi putar 180° mantap | [ &nbsp; ] LULUS |
+| **Solenoid Elektromagnet** | Mengunci pelat besi dengan daya cengkeram kuat | [ &nbsp; ] LULUS |

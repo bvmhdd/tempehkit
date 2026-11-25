@@ -1,0 +1,5 @@
+[wokwi]
+version = 1
+firmware = "08_tb6600_nema23_stepper.ino"
+elf = ""
+

@@ -1,94 +1,85 @@
-# 🛒 Shopping List & Bill of Materials (BOM) TempehKit
-## Desain Final v9 — 6-Slot Simultan, Flip 180°, Lean Architecture
+# 🛒 Shopping List & Daftar Potong Final — TempehKit v13 (Opsi 2 Final)
+## 6-Slot • Kotak Takar Memanjang 200 mm • Pad Silikon • Flip 180° • Laci Elevator 75 mm
 
-> **Tanggal Pembaruan**: September 2026  
-> **Arsitektur**: 6-Slot Simultan, Pembalikan Rotari 180° (NEMA23 + Belt HTD3M + Elektromagnet), Tanpa Fold Bar (Lipat Manual), Tanpa HC-SR04 (Pantau Visual), Tanpa LCD (Web Dashboard WiFi ESP32)
-
----
-
-## 1. Ringkasan Anggaran Biaya
-
-| No | Saluran Pembelian (Channel) | Jenis Pengadaan | Estimasi Biaya |
-|:--:|---|---|:--:|
-| A | **Toko Online** (Tokopedia / Shopee) | Elektronik, Sensor, Aktuator, Driver | Rp 801.000 |
-| B | **Toko Besi & Hardware Lokal** | Besi hollow, as baja, lead screw, baut | Rp 1.281.000 |
-| C | **Bengkel Las & Custom SS304** | Rangka mesin, corong hopper, cetakan mold | Rp 1.175.000 |
-| - | **Cadangan Tak Terduga (Buffer 10%)** | Mur, baut tambahan, kabel, fleksibilitas harga | Rp 326.000 |
-| **🏷️** | **TOTAL ESTIMASI ANGGARAN** | | **~Rp 3.583.000** |
+> **Arsitektur Final v13 (Opsi 2):** Cetakan + Bearing + NEMA 23 **dibaut mati** ke rangka utama (100% kaku menahan Press 1500 N). Pelepasan tempe vertikal (*demolding*) menggunakan **Laci Penyambut Naik–Turun 75 mm** (1× Mini Linear Actuator 12V 300N + 2× Guide Rod Ø10 mm).
+> **Acuan Visual 3D:** [`cad/viewer_3d_v13.html`](../cad/viewer_3d_v13.html)
 
 ---
 
-## 2. Channel A: Tokopedia / Shopee (Elektronik & Kontrol)
+## 1. Ringkasan Estimasi Biaya Lanjutan (Di Luar Komponen yang Sudah Diuji)
 
-> **Total Estimasi Channel A: ~Rp 801.000**
+| Kategori | Full Otomatis (Rel X & Z Bermotor) | Semi-Otomatis (Rel X & Z Geser Tangan) |
+|:---|---:|---:|
+| **A. Tambahan Elektronik & Penggerak** *(termasuk Mini Actuator Laci)* | Rp 910.000 | Rp 380.000 |
+| **B. Material Besi, Rel, Shaft & Silikon** | Rp 1.945.000 | Rp 1.945.000 |
+| **C. Jasa Bengkel Las & Fabrikasi SS304** | Rp 1.500.000 | Rp 1.500.000 |
+| **D. Buffer Tak Terduga (~10% + Ongkir)** | Rp 400.000 | Rp 350.000 |
+| **ESTIMASI TOTAL LANJUTAN** | **~Rp 4.755.000** *(Rp 4,4–5,0 jt)* | **~Rp 4.175.000** *(Rp 3,8–4,3 jt)* |
 
-| No | Nama Komponen | Kata Kunci Pencarian Tokopedia/Shopee | Qty | Harga Satuan (Rp) | Subtotal (Rp) | Keterangan / Fungsi |
-|:--:|---|---|:--:|:--:|:--:|---|
-| 1 | **ESP32 DevKit V1** | `ESP32 38 pin devkit v1` | 1 | 65.000 | 65.000 | Main controller & IoT WiFi Gateway |
-| 2 | **Load Cell 20kg + HX711** | `load cell 20kg bar type hx711` | 1 | 40.000 | 40.000 | Sensor timbangan otomatis dosing kedelai |
-| 3 | **Motor DC Gearbox 12V 60RPM** | `motor dc gearbox 12v high torque` | 1 | 75.000 | 75.000 | Penggerak naik-turun pelat press |
-| 4 | **Driver L298N** | `driver motor l298n dual h bridge` | 1 | 22.000 | 22.000 | Kontrol arah putar motor DC press |
-| 5 | **Stepper Motor NEMA 23** | `stepper nema 23 57BYG 2.8A` | 1 | 120.000 | 120.000 | Pemutar rotasi cetakan 180° |
-| 6 | **Driver Stepper TB6600** | `tb6600 stepper motor driver 4A` | 1 | 65.000 | 65.000 | Driver microstepping NEMA 23 |
-| 7 | **Relay Module 2-Channel 12V** | `relay 2 channel 12v optocoupler` | 1 | 18.000 | 18.000 | Kontrol solenoid gate & elektromagnet |
-| 8 | **Solenoid Elektromagnet 12V** | `electromagnet solenoid 12V 10kg` | 2 | 40.000 | 80.000 | Pengunci tutup cetakan saat putar 180° |
-| 9 | **Solenoid Push-Pull 12V** | `solenoid push pull 12v spring return` | 1 | 55.000 | 55.000 | Pintu geser dosing kedelai hopper |
-| 10 | **Power Supply Switching 12V 10A** | `power supply switching 12v 10a` | 1 | 90.000 | 90.000 | Catu daya utama motor & solenoid |
-| 11 | **Buck Converter LM2596** | `step down lm2596 buck converter` | 1 | 12.000 | 12.000 | Penurun tegangan 12V ke 5V untuk ESP32 |
-| 12 | **Limit Switch Micro** | `micro limit switch lever roller 5a` | 4 | 5.000 | 20.000 | Endstop batas atas & bawah press (2 spare) |
-| 13 | **Push Button 16mm Momentary** | `push button 16mm momentary metal` | 3 | 8.000 | 24.000 | Tombol fisik START, STOP/EMERGENCY |
-| 14 | **Buzzer Aktif 5V** | `buzzer aktif 5v` | 1 | 5.000 | 5.000 | Notifikasi suara siklus selesai & alarm |
-| 15 | **LED 5mm (Merah + Hijau)** | `led 5mm merah hijau diffuser` | 5 | 1.000 | 5.000 | Indikator visual status mesin di panel |
-| 16 | **Kapasitor Elco 470μF 16V/25V** | `kapasitor elektrolit 470uf 25v` | 5 | 2.000 | 10.000 | Filter noise ripple daya tegangan |
-| 17 | **Resistor 10kΩ 1/4W** | `resistor 10k ohm 1/4 watt` | 20 | 500 | 10.000 | Resistor pull-up tombol & sakelar |
-| 18 | **Kabel Jumper M-F 40cm** | `kabel jumper 40cm male female` | 2 set | 20.000 | 40.000 | Pengkabelan modul ke ESP32 |
-| 19 | **Terminal Block PCB 2-Pin** | `terminal block 2 pin 5.08mm` | 20 | 1.000 | 20.000 | Konektor kabel rapi dan kuat |
-| 20 | **Kotak Panel ABS 200×150×100mm**| `box panel box abs 200x150` | 1 | 25.000 | 25.000 | Enclosure box elektronik & tombol |
+> **Catatan Linear Actuator Press:** Jika Linear Actuator yang sudah kamu punya adalah **stroke 10 cm** dan ingin ganti ke **stroke 20 cm (1500 N)** agar clearance flip `+55 mm` tanpa modifikasi engsel, tambahkan ~Rp 350–450 rb.
 
 ---
 
-## 3. Channel B: Toko Besi & Hardware Lokal
+## 2. Channel A: Tambahan Elektronik & Penggerak (Tokopedia / Shopee)
 
-> **Total Estimasi Channel B: ~Rp 1.281.000**
+> Komponen utama yang **SUDAH DIUJI LULUS** (tidak perlu beli lagi): ESP32 DevKit V1, PSU 12V 10A, LM2596, HX711 + Load Cell 20 kg, NEMA 23 + TB6600, Linear Actuator + L298N, 1× Servo MG996R, 2× Elektromagnet P25/20 + Relay, Limit Switch Press, LED, Buzzer.
 
-| No | Nama Bahan / Barang | Spesifikasi Teknis | Qty | Harga Satuan (Rp) | Subtotal (Rp) | Keterangan / Fungsi |
-|:--:|---|---|:--:|:--:|:--:|---|
-| 1 | **Besi Hollow 40×40mm** | Tebal 2.0mm (total ±12 meter) | 12 meter | 50.000 /m | 600.000 | Rangka utama mesin (lebar 90cm, t=130cm) |
-| 2 | **As Baja / Stainless Steel Ø20mm** | Poros as pejal, panjang 65 cm | 1 batang | 60.000 | 60.000 | Poros putar cetakan (flip 180°) |
-| 3 | **Plat Aluminium 5mm** | 60 × 15 cm | 1 lembar | 130.000 | 130.000 | Pelat gantry penekan (*press plate*) |
-| 4 | **Plat Aluminium 3mm** | 70 × 30 cm | 1 lembar | 70.000 | 70.000 | Pelat pintu geser hopper & tutup cetakan |
-| 5 | **Lead Screw T8 300mm + Brass Nut** | Pitch 2mm, lead 8mm | 2 set | 45.000 | 90.000 | Penurun pelat press kiri dan kanan |
-| 6 | **Timing Belt HTD3M** | Lebar 10mm/15mm, panjang ~700mm | 1 buah | 35.000 | 35.000 | Sabuk transmisi putar NEMA23 ke as |
-| 7 | **Pulley 20T HTD3M (Bore 6.35mm)** | Shaft NEMA23 | 1 buah | 20.000 | 20.000 | Pulley penggerak NEMA 23 |
-| 8 | **Pulley 60T HTD3M (Bore 20mm)** | As Ø20mm (Rasio reduksi 1:3) | 1 buah | 40.000 | 40.000 | Pulley terpasang pada as cetakan |
-| 9 | **Bearing Flange UCFL 204 (20mm)** | 2 lubang baut housing cast iron | 2 unit | 25.000 | 50.000 | Bantalan tumpuan as putar cetakan |
-| 10 | **Bearing 608ZZ** | ID 8mm, OD 22mm | 4 unit | 5.000 | 20.000 | Tumpuan lead screw T8 atas & bawah |
-| 11 | **Shaft Coupler Fleksibel** | 8mm ke shaft motor | 1 unit | 35.000 | 35.000 | Sambungan motor DC ke lead screw |
-| 12 | **Engsel Baja 2 Inchi** | Engsel pintu cetakan 6 slot | 12 buah | 3.000 | 36.000 | Engsel penutup cetakan per slot |
-| 13 | **Baut, Mur, Ring Set (M3, M4, M5, M8)** | Baja galvanis / stainless | 1 set | 50.000 | 50.000 | Perakitan komponen mekanik |
-| 14 | **Kaki Karet Rangka M10** | Karet peredam getaran anti-slip | 4 buah | 8.000 | 32.000 | Kaki dudukan mesin di lantai |
-| 15 | **Cat Epoxy Besi + Primer** | Food-grade safe (putih / abu) | 1 kaleng | 43.000 | 43.000 | Pelapis anti karat rangka besi hollow |
+| No | Komponen | Qty | Estimasi (Rp) | Mode | Keterangan |
+|:-:|:---|:---:|---:|:---:|---|
+| 1 | **Mini Linear Actuator 12V Stroke 100 mm (300N, 15 mm/s)** | 1 | 185.000 | Wajib (Opsi 2) | Penggerak **Laci Elevator Naik–Turun 75 mm** |
+| 2 | **Modul Relay 2-Channel 12V / L298N Mini** | 1 | 25.000 | Wajib (Opsi 2) | Driver naik-turun Mini Linear Actuator Laci |
+| 3 | **Motor Getar DC 12V (*Vibration Motor*) + MOSFET/Relay** | 1 | 45.000 | Wajib | *Vibro-Levelling* 1,5 dtk meratakan 4 sudut |
+| 4 | **Box Panel ABS 200×150×100 mm + Push Button + Kabel** | 1 pkt | 115.000 | Wajib | Panel kontrol & kabel rapi (+ drag chain jika full-auto) |
+| 5 | **Limit Switch Laci Atas & Bawah** | 2 | 10.000 | Wajib (Opsi 2) | Batas atas (`Y=520`) & batas bawah (`Y=445`) |
+| 6 | **Stepper NEMA 17 + Driver A4988/TMC2208 + Belt GT2** | 2 set | 345.000 | *Full-Auto* | Penggerak otomatis Rel X (Slot 1→6) & Rel Teleskopik Z |
+| 7 | **Servo MG996R Metal Gear** *(tambahan)* | 2 | 110.000 | *Full-Auto* | 1× Pintu Weigh-Cup + 1× Pintu Clamshell |
+| 8 | **Modul PCA9685 (16-Ch PWM) + Buck XL4015 5A** | 1 set | 60.000 | *Full-Auto* | Hemat pin ESP32 & catu stabil 3 Servo |
+| 9 | **Limit Switch Home X & Home Z** | 2 | 15.000 | *Full-Auto* | Sensor titik nol (*homing*) Rel X & Z |
+
+*(Subtotal A: **Rp 910.000** Full-Auto / **Rp 380.000** Semi-Auto)*
 
 ---
 
-## 4. Channel C: Bengkel Las & Fabrikasi Custom SS304
+## 3. Channel B: Material Mekanik, Rel & Hardware (Toko Besi & Online)
 
-> **Total Estimasi Channel C: ~Rp 1.175.000**
-
-| No | Pekerjaan / Komponen Custom | Spesifikasi Teknis | Qty | Estimasi Biaya (Rp) | Keterangan & Catatan |
-|:--:|---|---|:--:|:--:|---|
-| 1 | **Corong Hopper Kedelai SS304** | Panjang 60cm, corong trapesium kapasitas 10–12 kg, 6 lubang nozzle outlet bawah | 1 unit | 350.000 | Food grade SS304, tebal plat 1.0mm |
-| 2 | **Nozzle Pipa Cabang (Y-Fork) SS304** | Pipa SS304 Ø38mm / 1.5 inchi, 6 cabang sejajar pitch 8.5cm c-to-c | 1 unit | 175.000 | Aliran kedelai rata ke 6 slot cetakan |
-| 3 | **Cetakan Tempe 6-Slot SS304** | 6 rongga (masing-masing 21.3 × 6.6 × 3.6 cm), sekat 1cm, flange as Ø20mm kiri-kanan | 1 unit | 250.000 | Rangka mold putar 180° |
-| 4 | **Ongkos Pengelasan & Perakitan Rangka** | Pengelasan siku frame 90×40×130cm, dudukan bearing, dudukan NEMA23 & motor | 1 paket | 400.000 | Pastikan siku tegak lurus (90°) |
+| No | Material / Barang | Spesifikasi | Qty | Estimasi (Rp) |
+|:-:|:---|:---|:---:|---:|
+| 1 | **Besi Hollow 40×40×2.0 mm** | Total ±18 meter (lihat daftar potong di bawah) | 3 btg (6m) | 600.000 |
+| 2 | **Rel Laci *Double Track* Stainless 30 cm** | Full Extension, **Non Soft-Close** (Rel Z Kotak Takar) | 1 pasang | 70.000 |
+| 3 | **Rel Laci *Double Track* Stainless 35–40 cm** | Full Extension, **Non Soft-Close** (Laci Penyambut) | 1 pasang | 85.000 |
+| 4 | **Linear Shaft Ø12 mm (56 cm) + LM12UU Flange + SK12** | Pemandu anti-miring Pelat Press (`X=95 & 805, Z=265`) | 1 set | 170.000 |
+| 5 | **Linear Shaft Ø16 mm (85 cm) + LM16UU ×4 + SK16 ×4** | Rel Geser Sumbu-X belakang (`Z=602`) | 1 set | 260.000 |
+| 6 | **Linear Shaft Ø10 mm (20 cm) ×2 + LM10UU ×2** | Pemandu vertikal **Laci Elevator** (`X=56 & 844`) | 1 set | 65.000 |
+| 7 | **As Pejal SS Ø20 mm (35 cm) + 2× Bearing UCFL 204** | **Stub-Axle** kiri & kanan cetakan (rongga bersih!) | 1 set | 140.000 |
+| 8 | **Pulley HTD3M 20T (Bore 8mm) + 60T (Bore 20mm) + Belt 384mm** | Transmisi reduksi 1:3 NEMA 23 | 1 set | 110.000 |
+| 9 | **Plat Aluminium 5 mm (`75×23 cm`) + 6 Pad Al 15 mm** | Pelat gantry press & badan 6 pad `64×210 mm` | 1 paket | 210.000 |
+| 10 | **Lembaran Silikon Food-Grade 5 mm (Shore A 45)** | Bantalan empuk anti-bubur di bawah 6 pad | 1 lembar | 95.000 |
+| 11 | **Baut/Mur SS M3–M10, 4× Kaki Karet M10, Cat Epoxy** | Perakitan & pelapis anti karat food-safe | 1 paket | 140.000 |
+| | **Subtotal B** | | | **Rp 1.945.000** |
 
 ---
 
-## 5. Tips Belanja & Penghematan Biaya
+## 4. Channel C: Jasa Bengkel Las & Fabrikasi Custom SS304
 
-1. **Paket Bengkel Stainless:**  
-   Pesan pengerjaan Corong Hopper, Nozzle Pipa Cabang, dan Cetakan 6-Slot ke **satu bengkel stainless** yang sama. Tanyakan harga borongan paket untuk menghemat biaya potong dan tekuk plat.
-2. **Kabel & Konektor:**  
-   Gunakan kabel pita *rainbow* atau kabel serabut berpelindung untuk koneksi ke driver dan sensor agar tidak mudah terputus saat terkena getaran mekanik.
-3. **Power Supply:**  
-   Gunakan PSU jaring switching 12V 10A berkualitas baik. Pastikan penempatan PSU dan Driver TB6600 memiliki ventilasi udara yang cukup di dalam panel box.
+| No | Pekerjaan Bengkel | Estimasi (Rp) | Catatan Penting |
+|:-:|:---|---:|:---|
+| 1 | **Potong & Las Rangka Hollow `900×1420×640 mm` + Sub-Frame Lift Laci + Bracket NEMA 23 & Pedestal Load Cell** | 600.000 | Pastikan siku 90° & tinggi poros kiri-kanan (`h=560`) rata waterpass |
+| 2 | **Cetakan 6-Slot SS304 (1,5 mm) + Lubang Angin Ø3 mm + Rel Selip L-Channel + Palang Magnet** | 400.000 | `591×240×36 mm`, pitch `76 mm`, pakai Stub-Axle luar (jangan tembus rongga!) |
+| 3 | **Hopper Trapesium SS304 + Corong Celah 200 mm + Kotak Takar Clamshell (`58×200×70 mm`) + Pelat Laci** | 500.000 | Borongan 1 bengkel stainless |
+| | **Subtotal C** | **Rp 1.500.000** | |
+
+---
+
+## 5. Daftar Ukuran Potong Besi Hollow 40×40×2.0 mm (Bawa ke Bengkel Las!)
+
+| Bagian Rangka | Ukuran Potong | Jumlah | Total Panjang |
+|:---|:---:|:---:|---:|
+| **Tiang Vertikal Utama** (4 sudut) | `142 cm` | 4 batang | 568 cm |
+| **Palang Lebar Depan & Belakang** (`Y = 40, 160, 340, 1100, 1380`) | `82 cm` | 10 batang | 820 cm |
+| **Palang Lebar Tengah** (`Actuator`, `Guide Z=265`, `2× Hopper`, `Load Cell`, `Mini Actuator Laci`) | `82 cm` | 6 batang | 492 cm |
+| **Palang Samping Full-Depth** (`Y = 40, 160, 340, 540, 1100, 1380`, kiri & kanan) | `56 cm` | 12 batang | 672 cm |
+| **Tiang Penguat Samping Tengah** (`Z = 320`, `Y = 380..540`) | `16 cm` | 2 batang | 32 cm |
+| **TOTAL KEBUTUHAN BESI HOLLOW** *(+ waste potong ~5%)* | | | **~25,8 m (≈ 4–5 btg @ 6 m)** |
+
+> [!NOTE]
+> *Koreksi ukuran potong:* Karena palang samping `56 cm` dibuat *full-depth* (12 batang) dan ada 6 palang tengah tambahan untuk kekakuan 1500 N, kebutuhan besi hollow totalnya menjadi **~26 meter (5 batang @ 6 m ≈ Rp 950 rb–1 jt, atau bisa pakai hollow 40×40×1.6 mm untuk palang sekunder agar tetap hemat di kisaran Rp 700–800 rb)**.

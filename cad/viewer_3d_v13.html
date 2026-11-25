@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TempehKit v13 (Opsi 2 Final) — CAD 3D Laci Elevator Naik-Turun 75 mm</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+    #canvas-container { width: 100%; height: 100%; }
+
+    .panel {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      width: 365px;
+      max-height: calc(100vh - 28px);
+      overflow-y: auto;
+      background: rgba(15, 23, 42, 0.93);
+      backdrop-filter: blur(10px);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+      z-index: 10;
+    }
+    .panel h1 { font-size: 15px; font-weight: 700; color: #34d399; margin-bottom: 2px; }
+    .panel .sub { font-size: 11px; color: #94a3b8; margin-bottom: 10px; }
+
+    .sec-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      margin: 12px 0 6px;
+      font-weight: 700;
+    }
+    .btn-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    button {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+      border-radius: 7px;
+      padding: 7px 9px;
+      font-size: 10.8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    button:hover { background: #334155; border-color: #34d399; }
+    button.primary { background: #059669; border-color: #34d399; color: #fff; grid-column: span 2; padding: 9px; font-size: 12px; }
+    button.primary:hover { background: #047857; }
+    button.active { background: #0284c7; border-color: #38bdf8; color: #fff; }
+    button.stage-btn { text-align: left; font-size: 10.3px; padding: 6px 8px; }
+    button.stage-btn.current { background: #059669; border-color: #34d399; color: #fff; }
+
+    .stage-box {
+      margin-top: 10px;
+      padding: 9px 11px;
+      border-radius: 8px;
+      background: #1e293b;
+      border-left: 3px solid #34d399;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .stage-box b { color: #34d399; }
+
+    .slider-row { margin-top: 8px; }
+    .slider-row label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px; color: #cbd5e1; }
+    .slider-row input[type="range"] { width: 100%; accent-color: #34d399; }
+
+    .legend {
+      position: fixed;
+      right: 14px;
+      top: 14px;
+      background: rgba(15, 23, 42, 0.90);
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 10px 13px;
+      font-size: 11px;
+      z-index: 10;
+    }
+    .legend-item { display: flex; align-items: center; gap: 7px; margin: 4px 0; }
+    .swatch { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+    .hint {
+      position: fixed;
+      bottom: 12px;
+      right: 14px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <div class="panel">
+    <h1>TempehKit v13 — OPSI 2 FINAL</h1>
+    <div class="sub">Cetakan Kaku 1500N • Laci Elevator Naik–Turun 75 mm (Mini Actuator 300N)</div>
+
+    <div class="btn-grid">
+      <button id="btnPlay" class="primary">⏸ Jeda Animasi 7 Tahap</button>
+    </div>
+
+    <div id="stageBox" class="stage-box">
+      <b>OPSI 2 FINAL — Laci Elevator Naik–Turun 75 mm!</b><br/>
+      Cetakan + Bearing + NEMA 23 dibaut MATI ke rangka (100% kaku saat Press 1500N). Hanya Laci Penyambut (~3 kg) yang naik menangkap ancak (gap 0 mm), lalu turun lurus -75 mm melepas 6 tempe!
+    </div>
+
+    <div class="sec-title">Loncat ke 7 Tahap Runtut</div>
+    <div class="btn-grid">
+      <button class="stage-btn" data-step="0">1. Timbang → Luncur S1..S6</button>
+      <button class="stage-btn" data-step="1">2. Getar 1,5 dtk & Lipat</button>
+      <button class="stage-btn" data-step="2">3. Vibro-Press Pad Silikon</button>
+      <button class="stage-btn" data-step="3">4. Selip Ancak & Magnet ON</button>
+      <button class="stage-btn" data-step="4">5. Flip 180° + Laci NAIK 0mm</button>
+      <button class="stage-btn" data-step="5">6. ★ Magnet OFF & Laci TURUN!</button>
+      <button class="stage-btn" data-step="6" style="grid-column: span 2;">7. Tarik Laci (Clearance +39 mm!) → Cetakan Balik 0°</button>
+    </div>
+
+    <div class="slider-row">
+      <label><span>Timeline Siklus Penuh</span><b id="valTime">0%</b></label>
+      <input type="range" id="slTime" min="0" max="1000" value="0" />
+    </div>
+
+    <div class="sec-title">Sudut Kamera</div>
+    <div class="btn-grid">
+      <button data-view="iso">Isometrik</button>
+      <button data-view="lift">★ Zoom Laci Elevator 300N</button>
+      <button data-view="side">Tampak Samping</button>
+      <button data-view="front">Tampak Depan</button>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div style="font-weight:700;margin-bottom:5px;color:#34d399;">Opsi 2 Final (Hemat & Super Kaku!)</div>
+    <div class="legend-item"><span class="swatch" style="background:#10b981"></span>Laci Penyambut + Rel Teleskopik 3-Susun</div>
+    <div class="legend-item"><span class="swatch" style="background:#ef4444"></span>Mini Linear Actuator 12V 300N (Naik–Turun Laci 75 mm)</div>
+    <div class="legend-item"><span class="swatch" style="background:#38bdf8"></span>Sub-Frame Lift Laci + 2× Guide Rod Ø10 mm Vertikal</div>
+    <div class="legend-item"><span class="swatch" style="background:#b45309"></span>Cetakan 6-Slot Dibaut Mati ke Rangka (100% Kaku 1500N)</div>
+    <div class="legend-item"><span class="swatch" style="background:#facc15"></span>Rel Teleskopik Kotak Takar & Rel Laci</div>
+    <div class="legend-item"><span class="swatch" style="background:#2dd4bf"></span>Pad Silikon 5 mm + Motor Getar 12V</div>
+  </div>
+
+  <div class="hint">Klik "6. ★ Magnet OFF & Laci TURUN!" lalu "★ Zoom Laci Elevator 300N" untuk lihat pelepasan 6 tempe 0% gesek!</div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const S = 0.01;
+    const mm = (v) => v * S;
+
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0f172a);
+
+    const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.set(15.2, 11.5, 16.0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, mm(640), 0);
+    controls.enableDamping = true;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.78));
+    const dir1 = new THREE.DirectionalLight(0xffffff, 1.05);
+    dir1.position.set(16, 26, 20);
+    scene.add(dir1);
+    const dir2 = new THREE.DirectionalLight(0x99f6e4, 0.50);
+    dir2.position.set(-16, 12, -16);
+    scene.add(dir2);
+
+    const grid = new THREE.GridHelper(32, 32, 0x334155, 0x1e293b);
+    grid.position.y = mm(-40);
+    scene.add(grid);
+
+    function makePerforatedPlasticTexture() {
+      const c = document.createElement('canvas');
+      c.width = 128; c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = 'rgba(186, 230, 253, 0.52)'; ctx.fillRect(0, 0, 128, 128);
+      ctx.strokeStyle = 'rgba(2, 132, 199, 0.85)'; ctx.lineWidth = 2;
+      for (let x = 16; x < 128; x += 24) {
+        for (let y = 16; y < 128; y += 24) {
+          ctx.beginPath(); ctx.arc(x, y, 3.2, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fill(); ctx.stroke();
+        }
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    function makeSoybeanTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#d97706'; ctx.fillRect(0, 0, 256, 256);
+      for (let i = 0; i < 420; i++) {
+        const x = (Math.sin(i * 12.9898) * 43758.5453 % 1 + 1) % 1 * 256;
+        const y = (Math.sin(i * 78.233) * 19341.23 % 1 + 1) % 1 * 256;
+        ctx.save(); ctx.translate(x, y); ctx.rotate((i % 18) * 0.35);
+        ctx.beginPath(); ctx.ellipse(0, 0, 7.5, 4.4, 0, 0, Math.PI * 2);
+        ctx.fillStyle = (i % 3 === 0) ? '#fcd34d' : (i % 3 === 1 ? '#fbbf24' : '#f59e0b');
+        ctx.fill(); ctx.strokeStyle = '#92400e'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.restore();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    function makeBambooTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#ca8a04'; ctx.fillRect(0, 0, 256, 256);
+      for (let y = 0; y < 256; y += 16) {
+        ctx.fillStyle = (y / 16) % 2 === 0 ? '#eab308' : '#a16207';
+        ctx.fillRect(0, y, 256, 12);
+      }
+      for (let x = 0; x < 256; x += 22) {
+        ctx.fillStyle = 'rgba(133, 77, 14, 0.55)'; ctx.fillRect(x, 0, 8, 256);
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    const matFrame    = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.55, roughness: 0.45 });
+    const matBracket  = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.65, roughness: 0.35 });
+    const matShelf    = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.35, roughness: 0.7 });
+    const matSteel    = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.85, roughness: 0.2 });
+    const matLiftSub  = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.55, roughness: 0.35 }); // Sub-Frame Lift Laci (biru)
+    const matTeleRail = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.6, roughness: 0.3 });
+    const matCarriage = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.65, roughness: 0.35 });
+    const matMold     = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.55, roughness: 0.35 });
+    const matRailL    = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.8, roughness: 0.25 });
+    const matPress    = new THREE.MeshStandardMaterial({ color: 0x7c3aed, metalness: 0.35, roughness: 0.4 });
+    const matPadAl    = new THREE.MeshStandardMaterial({ color: 0xa78bfa, roughness: 0.5 });
+    const matSilicone = new THREE.MeshStandardMaterial({ color: 0x2dd4bf, roughness: 0.75 });
+    const matMech     = new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.4, roughness: 0.45 });
+    const matElec     = new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.3, roughness: 0.5 });
+    const matMagOn    = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xef4444, emissiveIntensity: 0.95 });
+    const matMagOff   = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.6 });
+    const matLcActive = new THREE.MeshStandardMaterial({ color: 0x22c55e, emissive: 0x22c55e, emissiveIntensity: 0.85 });
+    const matVibOn    = new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xf97316, emissiveIntensity: 1.0 });
+    const matVibOff   = new THREE.MeshStandardMaterial({ color: 0x9a3412, roughness: 0.5 });
+    const matHopper   = new THREE.MeshStandardMaterial({ color: 0x2563eb, metalness: 0.4, roughness: 0.35, transparent: true, opacity: 0.82, side: THREE.DoubleSide });
+    const matDropBox  = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.45, roughness: 0.3, transparent: true, opacity: 0.88 });
+    const matSoy      = new THREE.MeshStandardMaterial({ map: makeSoybeanTexture(), roughness: 0.85 });
+    const matPlastic  = new THREE.MeshStandardMaterial({ map: makePerforatedPlasticTexture(), transparent: true, opacity: 0.72, side: THREE.DoubleSide, roughness: 0.2 });
+    const matAncak    = new THREE.MeshStandardMaterial({ map: makeBambooTexture(), roughness: 0.8 });
+    const matBelt     = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.9 });
+
+    const FW = 900, FH = 1420, FD = 640, HW = 40;
+    const AS_Y = 560, AS_Z = 200, WEIGH_Z = 480, GUIDE_Z = 265;
+    const cx = (x) => mm(x - FW / 2);
+    const cy = (y) => mm(y);
+    const cz = (z) => mm(FD / 2 - z);
+
+    function addBox(parent, x0, y0, z0, w, h, d, mat) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(mm(w), mm(h), mm(d)), mat);
+      m.position.set(cx(x0 + w / 2), cy(y0 + h / 2), cz(z0 + d / 2));
+      parent.add(m);
+      return m;
+    }
+
+    function createTaperedFunnel(topW, topD, botW, botD, h, mat) {
+      const geo = new THREE.BufferGeometry();
+      const tw = mm(topW / 2), td = mm(topD / 2), bw = mm(botW / 2), bd = mm(botD / 2), hh = mm(h / 2);
+      const verts = new Float32Array([
+        -tw, hh, td,   tw, hh, td,   bw, -hh, bd,  -tw, hh, td,   bw, -hh, bd, -bw, -hh, bd,
+         tw, hh, -td, -tw, hh, -td, -bw, -hh, -bd,  tw, hh, -td, -bw, -hh, -bd,  bw, -hh, -bd,
+        -tw, hh, -td, -tw, hh, td,  -bw, -hh, bd,  -tw, hh, -td, -bw, -hh, bd, -bw, -hh, -bd,
+         tw, hh, td,   tw, hh, -td,  bw, -hh, -bd,  tw, hh, td,   bw, -hh, -bd, bw, -hh, bd,
+      ]);
+      geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+      geo.computeVertexNormals();
+      return new THREE.Mesh(geo, mat);
+    }
+
+    const machine = new THREE.Group();
+    scene.add(machine);
+
+    // 1. RANGKA UTAMA HOLLOW 40x40 (100% KAKU — CETAKAN DIBAUT MATI!)
+    for (const x of [0, FW - HW]) {
+      for (const z of [0, FD - HW]) {
+        addBox(machine, x, 0, z, HW, FH, HW, matFrame);
+        addBox(machine, x + 10, -28, z + 10, 20, 28, 20, matSteel);
+        addBox(machine, x, -40, z, HW, 12, HW, matShelf);
+      }
+      for (const by of [40, 160, 340, 540, 1100, 1380]) {
+        addBox(machine, x, by, HW, HW, HW, FD - 2 * HW, matFrame);
+      }
+      addBox(machine, x, 380, 320, HW, 160, HW, matFrame);
+    }
+    for (const by of [40, 160, 340, 1100, 1380]) {
+      addBox(machine, HW, by, 0, FW - 2 * HW, HW, HW, matFrame);
+      addBox(machine, HW, by, FD - HW, FW - 2 * HW, HW, HW, matFrame);
+    }
+    addBox(machine, HW, 1100, AS_Z - 20, FW - 2 * HW, HW, HW, matFrame);
+    addBox(machine, HW, 1100, GUIDE_Z - 20, FW - 2 * HW, HW, HW, matFrame);
+    addBox(machine, HW, 1100, 360, FW - 2 * HW, HW, HW, matFrame);
+    addBox(machine, HW, 1100, 560, FW - 2 * HW, HW, HW, matFrame);
+    addBox(machine, HW, 540, WEIGH_Z - 20, FW - 2 * HW, HW, HW, matFrame);
+
+    // Papan Rak Bawah + Panel ABS (kiri) & PSU (kanan) — memberi ruang bersih di tengah untuk Mini Actuator!
+    addBox(machine, 40, 196, 40, FW - 80, 8, FD - 80, matShelf);
+    addBox(machine, 100, 204, 240, 250, 115, 160, matFrame);
+    addBox(machine, 550, 204, 240, 220, 110, 140, matElec);
+
+    // 2. HOPPER + SERVO GATE + LOAD CELL + REL X + REL TELESKOPIK Z
+    addBox(machine, 300, 1140, 375, 300, 240, 210, matHopper);
+    const funnelMesh = createTaperedFunnel(300, 210, 64, 200, 410, matHopper);
+    funnelMesh.position.set(0, cy(730 + 205), cz(WEIGH_Z));
+    machine.add(funnelMesh);
+
+    addBox(machine, 416, 728, 378, 68, 12, 204, matBracket);
+    const hopperGate = addBox(machine, 414, 718, 376, 72, 10, 208, matSteel);
+    addBox(machine, 484, 736, 460, 46, 36, 44, matElec);
+    addBox(machine, 482, 722, 476, 22, 18, 10, matSteel);
+
+    const hopperStream = addBox(machine, 426, 680, 390, 48, 50, 180, matSoy);
+    hopperStream.visible = false;
+
+    addBox(machine, 410, 580, WEIGH_Z - 55, 80, 18, 110, matBracket);
+    const loadCellMesh = addBox(machine, 422, 598, WEIGH_Z - 45, 56, 22, 90, matElec);
+    addBox(machine, 416, 620, WEIGH_Z - 95, 68, 5, 190, matSteel);
+
+    for (const ry of [625, 705]) {
+      const shaftX = new THREE.Mesh(new THREE.CylinderGeometry(mm(8), mm(8), mm(820), 16), matSteel);
+      shaftX.rotation.z = Math.PI / 2;
+      shaftX.position.set(0, cy(ry), cz(602));
+      machine.add(shaftX);
+      addBox(machine, 40, ry - 20, 586, 18, 40, 32, matBracket);
+      addBox(machine, 842, ry - 20, 586, 18, 40, 32, matBracket);
+    }
+
+    const xCarriage = new THREE.Group();
+    machine.add(xCarriage);
+    for (const ry of [625, 705]) {
+      for (const bx of [-42, 42]) {
+        const lm = new THREE.Mesh(new THREE.CylinderGeometry(mm(15), mm(15), mm(36), 16), matMech);
+        lm.rotation.z = Math.PI / 2;
+        lm.position.set(mm(bx), cy(ry), cz(602));
+        xCarriage.add(lm);
+      }
+    }
+    const xPlate = new THREE.Mesh(new THREE.BoxGeometry(mm(124), mm(112), mm(12)), matCarriage);
+    xPlate.position.set(0, cy(665), cz(590));
+    xCarriage.add(xPlate);
+
+    for (const sx of [-42, 42]) {
+      const outerRail = new THREE.Mesh(new THREE.BoxGeometry(mm(10), mm(26), mm(205)), matCarriage);
+      outerRail.position.set(mm(sx), cy(665), cz(486));
+      xCarriage.add(outerRail);
+    }
+    const zMidGroup = new THREE.Group();
+    xCarriage.add(zMidGroup);
+    for (const sx of [-36, 36]) {
+      const midRail = new THREE.Mesh(new THREE.BoxGeometry(mm(6), mm(18), mm(210)), matTeleRail);
+      midRail.position.set(mm(sx), cy(665), cz(486));
+      zMidGroup.add(midRail);
+    }
+
+    const zSliderGroup = new THREE.Group();
+    xCarriage.add(zSliderGroup);
+    for (const sx of [-32, 32]) {
+      const inRail = new THREE.Mesh(new THREE.BoxGeometry(mm(6), mm(12), mm(200)), matTeleRail);
+      inRail.position.set(mm(sx), cy(665), cz(WEIGH_Z));
+      zSliderGroup.add(inRail);
+    }
+    const boxHandle = new THREE.Mesh(new THREE.BoxGeometry(mm(58), mm(10), mm(14)), matSteel);
+    boxHandle.position.set(0, cy(702), cz(WEIGH_Z - 95));
+    zSliderGroup.add(boxHandle);
+
+    const dbBody = new THREE.Mesh(new THREE.BoxGeometry(mm(58), mm(70), mm(200)), matDropBox);
+    dbBody.position.set(0, cy(660), cz(WEIGH_Z));
+    zSliderGroup.add(dbBody);
+    for (const sz of [-34, 34]) {
+      const div = new THREE.Mesh(new THREE.BoxGeometry(mm(54), mm(68), mm(4)), matSteel);
+      div.position.set(0, cy(660), cz(WEIGH_Z + sz));
+      zSliderGroup.add(div);
+    }
+    const boxBeans = new THREE.Mesh(new THREE.BoxGeometry(mm(52), mm(54), mm(192)), matSoy);
+    boxBeans.position.set(0, cy(654), cz(WEIGH_Z));
+    zSliderGroup.add(boxBeans);
+
+    const clamL = new THREE.Group();
+    clamL.position.set(mm(-29), cy(625), cz(WEIGH_Z));
+    zSliderGroup.add(clamL);
+    const doorL = new THREE.Mesh(new THREE.BoxGeometry(mm(29), mm(4), mm(200)), matSteel);
+    doorL.position.set(mm(14.5), 0, 0);
+    clamL.add(doorL);
+
+    const clamR = new THREE.Group();
+    clamR.position.set(mm(29), cy(625), cz(WEIGH_Z));
+    zSliderGroup.add(clamR);
+    const doorR = new THREE.Mesh(new THREE.BoxGeometry(mm(29), mm(4), mm(200)), matSteel);
+    doorR.position.set(mm(-14.5), 0, 0);
+    clamR.add(doorR);
+
+    const beanCurtain = new THREE.Group();
+    zSliderGroup.add(beanCurtain);
+    for (const bz of [-65, 0, 65]) {
+      const st = new THREE.Mesh(new THREE.BoxGeometry(mm(46), mm(62), mm(54)), matSoy);
+      st.position.set(0, cy(592), cz(WEIGH_Z + bz));
+      beanCurtain.add(st);
+    }
+    beanCurtain.visible = false;
+
+    // 3. ZONA DEPAN: BEARING + NEMA 23 + CETAKAN DIBAUT MATI KE RANGKA (100% KAKU 1500N!)
+    addBox(machine, 40, AS_Y - 40, AS_Z - 40, 30, 80, 80, matMech);
+    addBox(machine, FW - 70, AS_Y - 40, AS_Z - 40, 30, 80, 80, matMech);
+
+    addBox(machine, -46, 424, AS_Z - 114, 86, 12, 74, matBracket);
+    addBox(machine, 0, 424, AS_Z - 114, 14, 120, 74, matBracket);
+    addBox(machine, -38, 436, AS_Z - 106, 76, 56, 56, matElec);
+    const pulley20 = new THREE.Mesh(new THREE.CylinderGeometry(mm(10), mm(10), mm(20), 24), matMech);
+    pulley20.rotation.z = Math.PI / 2;
+    pulley20.position.set(cx(20), cy(464), cz(AS_Z - 78));
+    machine.add(pulley20);
+    const beltDist = Math.hypot(78, 96);
+    for (const off of [-16, 16]) {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(mm(15), mm(4), mm(beltDist)), matBelt);
+      b.position.set(cx(20), cy(512 + off * 0.6), cz(AS_Z - 39 - off * 0.5));
+      b.rotation.x = Math.atan2(96, 78);
+      machine.add(b);
+    }
+
+    const moldPivot = new THREE.Group();
+    moldPivot.position.set(0, cy(AS_Y), cz(AS_Z));
+    machine.add(moldPivot);
+
+    function mBox(lx, ly, lz, w, h, d, mat, parent = moldPivot) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(mm(w), mm(h), mm(d)), mat);
+      m.position.set(mm(lx), mm(ly), mm(lz));
+      parent.add(m);
+      return m;
+    }
+
+    const axleL = new THREE.Mesh(new THREE.CylinderGeometry(mm(10), mm(10), mm(145), 24), matSteel);
+    axleL.rotation.z = Math.PI / 2; axleL.position.set(mm(-368), 0, 0); moldPivot.add(axleL);
+    const axleR = new THREE.Mesh(new THREE.CylinderGeometry(mm(10), mm(10), mm(145), 24), matSteel);
+    axleR.rotation.z = Math.PI / 2; axleR.position.set(mm(368), 0, 0); moldPivot.add(axleR);
+    mBox(-298, 0, 0, 8, 36, 90, matBracket);
+    mBox( 298, 0, 0, 8, 36, 90, matBracket);
+    mBox(0, -20, 0, 591, 6, 40, matBracket);
+
+    const pulley60 = new THREE.Mesh(new THREE.CylinderGeometry(mm(29), mm(29), mm(20), 32), matMech);
+    pulley60.rotation.z = Math.PI / 2; pulley60.position.x = cx(20); moldPivot.add(pulley60);
+
+    mBox(0, -16, 0, 591, 4, 240, matMold);
+    mBox(0, 0, 113.25, 591, 36, 13.5, matMold);
+    mBox(0, 0, -113.25, 591, 36, 13.5, matMold);
+    mBox(-591 / 2 + 33.75, 0, 0, 67.5, 36, 240, matMold);
+    mBox( 591 / 2 - 33.75, 0, 0, 67.5, 36, 240, matMold);
+    for (let i = 0; i < 5; i++) {
+      const sx = -591 / 2 + 67.5 + (i + 1) * 66 + i * 10 + 5;
+      mBox(sx, 0, 0, 10, 36, 213, matMold);
+    }
+
+    const vibMotor = mBox(0, -39, 0, 90, 32, 56, matVibOff);
+    for (const side of [-1, 1]) {
+      mBox(side * 326, 28, 0, 8, 28, 254, matRailL);
+      mBox(side * 314, 40, 0, 24, 6, 254, matRailL);
+    }
+    mBox(0, 28, -128, 660, 24, 8, matRailL);
+    const magL = mBox(-295, 24, 122, 26, 22, 22, matMagOff);
+    const magR = mBox( 295, 24, 122, 26, 22, 22, matMagOff);
+    const frontLatch = new THREE.Group();
+    frontLatch.position.set(0, mm(28), mm(132));
+    moldPivot.add(frontLatch);
+    frontLatch.add(new THREE.Mesh(new THREE.BoxGeometry(mm(652), mm(22), mm(8)), matRailL));
+
+    const payloadOnMold = new THREE.Group();
+    moldPivot.add(payloadOnMold);
+
+    const slotCentersX = [255, 331, 407, 483, 559, 635];
+    const slotItems = [];
+    for (let i = 0; i < 6; i++) {
+      const lx = slotCentersX[i] - FW / 2;
+      const g = new THREE.Group();
+      g.position.set(mm(lx), 0, 0);
+      payloadOnMold.add(g);
+
+      mBox(0, -13, 0, 64, 1.5, 211, matPlastic, g);
+      mBox(-31.5, 2, 0, 1.5, 32, 211, matPlastic, g);
+      mBox( 31.5, 2, 0, 1.5, 32, 211, matPlastic, g);
+
+      const flapLPivot = new THREE.Group();
+      flapLPivot.position.set(mm(-31.5), mm(18.5), 0);
+      g.add(flapLPivot);
+      const flapL = new THREE.Mesh(new THREE.BoxGeometry(mm(42), mm(1.5), mm(209)), matPlastic);
+      flapL.position.set(mm(-21), 0, 0);
+      flapLPivot.add(flapL);
+
+      const flapRPivot = new THREE.Group();
+      flapRPivot.position.set(mm(31.5), mm(19.8), 0);
+      g.add(flapRPivot);
+      const flapR = new THREE.Mesh(new THREE.BoxGeometry(mm(42), mm(1.5), mm(209)), matPlastic);
+      flapR.position.set(mm(21), 0, 0);
+      flapRPivot.add(flapR);
+
+      const soy = new THREE.Mesh(new THREE.BoxGeometry(mm(61), mm(31), mm(208)), matSoy);
+      soy.position.set(0, mm(-13 + 15.5), 0);
+      g.add(soy);
+      slotItems.push({ g, soy, flapLPivot, flapRPivot });
+    }
+
+    const ancakOnMold = new THREE.Mesh(new THREE.BoxGeometry(mm(640), mm(18), mm(248)), matAncak);
+    ancakOnMold.position.set(0, mm(18 + 9), 0);
+    payloadOnMold.add(ancakOnMold);
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 4. ★ OPSI 2 FINAL: LACI ELEVATOR NAIK–TURUN 75 mm (MINI ACTUATOR 12V 300N!)
+    //    - 2x Guide Rod Ø10 mm Vertikal di kiri (X=56) & kanan (X=844), Z=200 (Y=340..520)
+    //    - 1x Mini Linear Actuator 12V 300N di tengah bawah (X=450, Z=200, di atas palang Y=300..340)
+    //    - Sub-Frame Lift Laci (biru) + Rel Laci Teleskopik 3-Susun naik-turun mulus 75 mm!
+    //      * Posisi BAWAH (0 mm): Atas laci = Y=445 mm -> Tempe puncak Y=497 mm (Clearance +45 mm di bawah cetakan!)
+    //      * Posisi ATAS (+75 mm): Atas laci = Y=520 mm -> Menempel rapat bawah Ancak (Gap 4 mm -> 0% jatuh!)
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 2 Guide Rod Vertikal Ø10 mm (tersambung palang Y=340 sampai gusset bawah bearing Y=520)
+    for (const gx of [56, FW - 56]) {
+      const gRod = new THREE.Mesh(new THREE.CylinderGeometry(mm(5), mm(5), mm(185), 14), matSteel);
+      gRod.position.set(cx(gx), cy(340 + 92.5), cz(AS_Z));
+      machine.add(gRod);
+      addBox(machine, gx - 14, 340, AS_Z - 14, 28, 12, 28, matBracket);
+      addBox(machine, gx - 14, 514, AS_Z - 14, 28, 12, 28, matBracket);
+    }
+    // Bodi Mini Linear Actuator 12V 300N (Stroke 100 mm) dibaut kokoh ke Papan Rak Bawah Y=204 (di tengah antara Panel ABS & PSU!)
+    addBox(machine, 434, 204, AS_Z - 16, 32, 16, 32, matBracket); // Clevis bawah di rak Y=204
+    const miniActBody = new THREE.Mesh(new THREE.CylinderGeometry(mm(18), mm(18), mm(140), 20), matElec);
+    miniActBody.position.set(0, cy(220 + 70), cz(AS_Z)); // Y = 220..360 (100% di bawah palang Sub-Frame Y=412!)
+    machine.add(miniActBody);
+
+    // GRUP SUB-FRAME LIFT LACI (bergerak vertikal 0 .. +75 mm!)
+    // Koordinat dasar (lift = 0 mm): atas pelat laci berada di Y = 445 mm!
+    const drawerLiftGroup = new THREE.Group();
+    machine.add(drawerLiftGroup);
+
+    // Piston Mini Actuator ikut naik-turun mendorong palang bawah Sub-Frame Lift (Y=412) dari bawah tanpa tembus!
+    const miniPiston = new THREE.Mesh(new THREE.CylinderGeometry(mm(7), mm(7), mm(115), 16), matSteel);
+    miniPiston.position.set(0, cy(356), cz(AS_Z)); // Y = 298..413 (lift=0) -> Y = 373..488 (lift=+75 mm!)
+    drawerLiftGroup.add(miniPiston);
+    addBox(drawerLiftGroup, 436, 400, AS_Z - 14, 28, 14, 28, matBracket); // Clevis atas piston ke Sub-Frame Lift
+    // Palang U Sub-Frame Lift (biru) menghubungkan piston tengah ke 2 bushing LM10UU & 2 Rel Laci Luar!
+    addBox(drawerLiftGroup, 50, 412, AS_Z - 16, FW - 100, 18, 32, matLiftSub);
+    // 2 Bushing LM10UU memeluk Guide Rod Ø10 di X=56 & X=844
+    for (const gx of [56, FW - 56]) {
+      const b10 = new THREE.Mesh(new THREE.CylinderGeometry(mm(11), mm(11), mm(34), 16), matMech);
+      b10.position.set(cx(gx), cy(421), cz(AS_Z));
+      drawerLiftGroup.add(b10);
+    }
+    // 2 Rel Laci Luar (terpasang pada sisi kiri & kanan Sub-Frame Lift, Y=421..445, Z=40..360!)
+    for (const rx of [44, FW - 56]) {
+      addBox(drawerLiftGroup, rx, 421, 40, 12, 24, 320, matLiftSub);
+    }
+    // 2 Rel Laci Tengah Teleskopik (kuning emas)
+    const drawerMidRails = new THREE.Group();
+    drawerLiftGroup.add(drawerMidRails);
+    for (const rx of [56, FW - 62]) {
+      addBox(drawerMidRails, rx, 425, 40, 6, 16, 320, matTeleRail);
+    }
+
+    // Laci Penyambut Hijau (di dalam drawerLiftGroup -> ikut naik-turun 75 mm DAN meluncur maju-mundur 340 mm!)
+    const drawerGroup = new THREE.Group();
+    drawerLiftGroup.add(drawerGroup);
+    const drawerPlate = new THREE.Mesh(new THREE.BoxGeometry(mm(772), mm(16), mm(270)), matMech);
+    drawerPlate.position.set(0, cy(437), cz(AS_Z)); // Permukaan atas laci = Y=445 (bawah) / Y=520 (atas +75 mm)!
+    drawerGroup.add(drawerPlate);
+    for (const sx of [-389, 389]) {
+      const drIn = new THREE.Mesh(new THREE.BoxGeometry(mm(6), mm(12), mm(270)), matTeleRail);
+      drIn.position.set(mm(sx), cy(433), cz(AS_Z));
+      drawerGroup.add(drIn);
+    }
+    const drawerHandle = new THREE.Mesh(new THREE.BoxGeometry(mm(180), mm(14), mm(24)), matSteel);
+    drawerHandle.position.set(0, cy(437), cz(AS_Z - 148));
+    drawerGroup.add(drawerHandle);
+
+    // Hasil jadi (Ancak + 6 Tempe terbalik) duduk di atas permukaan Laci (Y=445)!
+    const finishedOnDrawer = new THREE.Group();
+    drawerGroup.add(finishedOnDrawer);
+    const ancakDone = new THREE.Mesh(new THREE.BoxGeometry(mm(640), mm(18), mm(248)), matAncak);
+    ancakDone.position.set(0, cy(445 + 9), cz(AS_Z));
+    finishedOnDrawer.add(ancakDone);
+    for (let i = 0; i < 6; i++) {
+      const lx = slotCentersX[i] - FW / 2;
+      const tb = new THREE.Mesh(new THREE.BoxGeometry(mm(62), mm(31), mm(209)), matSoy);
+      tb.position.set(mm(lx), cy(463 + 15.5), cz(AS_Z));
+      finishedOnDrawer.add(tb);
+      const wrap = new THREE.Mesh(new THREE.BoxGeometry(mm(64), mm(33), mm(211)), matPlastic);
+      wrap.position.set(mm(lx), cy(463 + 16), cz(AS_Z));
+      finishedOnDrawer.add(wrap);
+    }
+    finishedOnDrawer.visible = false;
+
+    // 5. LINEAR ACTUATOR PRESS 1500N + GUIDE SHAFT (Z=265) + 6 PAD SILIKON
+    addBox(machine, 40, 540, GUIDE_Z - 22, 75, 16, 44, matBracket);
+    addBox(machine, FW - 115, 540, GUIDE_Z - 22, 75, 16, 44, matBracket);
+    for (const gx of [95, 805]) {
+      const rod = new THREE.Mesh(new THREE.CylinderGeometry(mm(6), mm(6), mm(545), 16), matSteel);
+      rod.position.set(cx(gx), cy(555 + 272.5), cz(GUIDE_Z));
+      machine.add(rod);
+      addBox(machine, gx - 18, 1082, GUIDE_Z - 18, 36, 18, 36, matBracket);
+      addBox(machine, gx - 18, 556, GUIDE_Z - 18, 36, 16, 36, matBracket);
+    }
+    addBox(machine, 428, 1068, AS_Z - 22, 44, 32, 44, matBracket);
+    const actBody = new THREE.Mesh(new THREE.CylinderGeometry(mm(28), mm(28), mm(230), 24), matElec);
+    actBody.position.set(0, cy(955), cz(AS_Z));
+    machine.add(actBody);
+
+    const pressGroup = new THREE.Group();
+    machine.add(pressGroup);
+    const pistonRod = new THREE.Mesh(new THREE.CylinderGeometry(mm(10), mm(10), mm(210), 20), matSteel);
+    pistonRod.position.set(0, cy(885), cz(AS_Z));
+    pressGroup.add(pistonRod);
+    addBox(pressGroup, 428, 775, AS_Z - 22, 44, 24, 44, matBracket);
+    addBox(pressGroup, 75, 770, AS_Z - 112.5, 750, 5, 225, matPress);
+    for (const gx of [95, 805]) {
+      const bush = new THREE.Mesh(new THREE.CylinderGeometry(mm(15), mm(15), mm(34), 20), matMech);
+      bush.position.set(cx(gx), cy(775), cz(GUIDE_Z));
+      pressGroup.add(bush);
+    }
+    for (let i = 0; i < 6; i++) {
+      addBox(pressGroup, slotCentersX[i] - 32, 755, AS_Z - 105, 64, 15, 210, matPadAl);
+      addBox(pressGroup, slotCentersX[i] - 32, 750, AS_Z - 105, 64, 5, 210, matSilicone);
+    }
+
+    // 6. TIMELINE 7 TAHAP (OPSI 2: LACI ELEVATOR NAIK +75 mm → MAGNET OFF → LACI TURUN -75 mm!)
+    const STAGES = [
+      { t0: 0.00, t1: 0.36, title: 'Tahap 1 — Timbang → Geser X → Luncur Z → Tebar 200 mm',
+        desc: 'Corong trapesium mengisi Kotak Takar di atas Load Cell → Kereta X geser → Rel Teleskopik Z maju +280 mm → Clamshell tebar rata!' },
+      { t0: 0.36, t1: 0.46, title: 'Tahap 2 — Motor Getar 12V & Lipat Plastik',
+        desc: 'Getaran meratakan 4 sudut, lalu plastik dilipat kiri→kanan.' },
+      { t0: 0.46, t1: 0.56, title: 'Tahap 3 — Vibro-Press Pad Silikon (Cetakan 100% Kaku!)',
+        desc: 'Karena cetakan dibaut mati ke rangka, tekanan 1500N ditahan kokoh 100% tanpa goyang!' },
+      { t0: 0.56, t1: 0.66, title: 'Tahap 4 — Selip Ancak Horizontal + Magnet ON',
+        desc: 'Ancak diselipkan ke Rel L-Channel → Palang depan menutup & 2× Elektromagnet KUNCI 16 kgf.' },
+      { t0: 0.66, t1: 0.80, title: 'Tahap 5 — Flip 180° + Laci Masuk & NAIK +75 mm (Gap 0 mm!)',
+        desc: 'NEMA 23 memutar Cetakan + Ancak 180°, lalu Laci masuk di bawah & Mini Actuator 300N mendorong Laci NAIK +75 mm menempel rapat di bawah ancak!' },
+      { t0: 0.80, t1: 0.90, title: 'Tahap 6 — ★ MAGNET OFF & LACI TURUN -75 mm LURUS VERTIKAL!',
+        desc: 'Magnet lepas → Mini Actuator 300N menurunkan Laci + Ancak + 6 Tempe lurus ke bawah -75 mm (terbuka ruang bebas +45 mm di bawah dinding cetakan)!' },
+      { t0: 0.90, t1: 1.00, title: 'Tahap 7 — Tarik Laci (0% Gesek!) → Cetakan Balik 0°',
+        desc: 'Laci ditarik keluar membawa 6 balok tempe utuh sempurna tanpa menyenggol cetakan → Cetakan kosong balik 0°!' },
+    ];
+
+    const slTime = document.getElementById('slTime');
+    const valTime = document.getElementById('valTime');
+    const stageBox = document.getElementById('stageBox');
+    const btnPlay = document.getElementById('btnPlay');
+    const stageBtns = document.querySelectorAll('.stage-btn');
+
+    let playing = true;
+    let progress = 0.0;
+    const clamp01 = (v) => Math.max(0, Math.min(1, v));
+
+    function applyTimeline(p, clockMs) {
+      valTime.textContent = `${Math.round(p * 100)}%`;
+      slTime.value = Math.round(p * 1000);
+
+      let activeIdx = 0;
+      for (let i = 0; i < STAGES.length; i++) {
+        if (p >= STAGES[i].t0 && p <= STAGES[i].t1) { activeIdx = i; break; }
+      }
+      stageBox.innerHTML = `<b>${STAGES[activeIdx].title}</b><br/>${STAGES[activeIdx].desc}`;
+      stageBtns.forEach((b, idx) => b.classList.toggle('current', idx === activeIdx));
+
+      let carX = 450, slideForward = 0, gateOpenSlide = 0;
+      let hopStreamVis = false, lcWeighing = false, boxBeanLvl = 0.0;
+      let clamOpen = 0, curtainVis = false;
+      let pressMm = 0, flipDeg = 0, magnetOn = false, latchClosed = false;
+      let ancakVisible = false, ancakSlideZ = 270;
+      let drawerOutZ = 340;
+      let drawerLiftMm = 0; // ★ GERAKAN NAIK–TURUN LACI ELEVATOR (0 mm bawah .. +75 mm menempel ancak!)
+      let payloadVis = true, doneVis = false, vibrating = false;
+
+      if (p < 0.36) {
+        const sp = (p / 0.36) * 6;
+        const idx = Math.min(5, Math.floor(sp));
+        const lt = sp - idx;
+        const targetX = slotCentersX[idx];
+
+        if (lt < 0.22) {
+          carX = 450; lcWeighing = true; gateOpenSlide = (lt < 0.19) ? 68 : 0;
+          hopStreamVis = (lt > 0.02 && lt < 0.18); boxBeanLvl = clamp01(lt / 0.18);
+        } else if (lt < 0.40) {
+          carX = 450 + (targetX - 450) * clamp01((lt - 0.22) / 0.18); boxBeanLvl = 1.0;
+        } else if (lt < 0.58) {
+          carX = targetX; slideForward = 280 * clamp01((lt - 0.40) / 0.18); boxBeanLvl = 1.0;
+        } else if (lt < 0.76) {
+          const dt = clamp01((lt - 0.58) / 0.18);
+          carX = targetX; slideForward = 280; clamOpen = 75;
+          curtainVis = (dt < 0.85); boxBeanLvl = Math.max(0.0, 1.0 - dt);
+        } else if (lt < 0.90) {
+          carX = targetX; slideForward = 280 * (1 - clamp01((lt - 0.76) / 0.14));
+        } else {
+          carX = targetX + (450 - targetX) * clamp01((lt - 0.90) / 0.10);
+        }
+      }
+
+      for (let i = 0; i < 6; i++) {
+        const slotDur = 0.36 / 6;
+        const dropStart = i * slotDur + slotDur * 0.58;
+        const dropEnd   = i * slotDur + slotDur * 0.76;
+        const fillT = clamp01((p - dropStart) / (dropEnd - dropStart));
+        const item = slotItems[i];
+        item.g.visible = p >= (i * slotDur);
+        item.soy.scale.y = Math.max(0.04, fillT);
+        item.soy.position.y = mm(-13 + 15.5 * item.soy.scale.y);
+
+        const fStart = 0.39 + (i / 6) * 0.05;
+        const fL = clamp01((p - fStart) / 0.015);
+        const fR = clamp01((p - (fStart + 0.010)) / 0.015);
+        item.flapLPivot.rotation.z = -THREE.MathUtils.degToRad(180 * fL);
+        item.flapRPivot.rotation.z =  THREE.MathUtils.degToRad(180 * fR);
+      }
+
+      if (p >= 0.36 && p < 0.41) vibrating = true;
+
+      if (p >= 0.46 && p < 0.56) {
+        if (p < 0.50) { pressMm = 198 * clamp01((p - 0.46) / 0.04); vibrating = true; }
+        else if (p < 0.525) pressMm = 198;
+        else pressMm = 198 * (1 - clamp01((p - 0.525) / 0.035));
+      }
+
+      if (p >= 0.56 && p < 0.80) {
+        ancakVisible = true;
+        ancakSlideZ = 270 * (1 - clamp01((p - 0.56) / 0.05));
+        if (p >= 0.62) { latchClosed = true; magnetOn = true; }
+      }
+
+      // TAHAP 5 (0.66 - 0.80): Flip 180° -> Laci Masuk di bawah (0 mm) -> Laci NAIK +75 mm menyentuh rapat bawah Ancak!
+      if (p >= 0.66 && p < 0.80) {
+        flipDeg = 180 * clamp01((p - 0.66) / 0.05);
+        ancakSlideZ = 0; latchClosed = true; magnetOn = true;
+        if (p >= 0.71 && p < 0.755) {
+          drawerOutZ = 340 * (1 - clamp01((p - 0.71) / 0.045));
+          drawerLiftMm = 0;
+        } else if (p >= 0.755) {
+          drawerOutZ = 0;
+          drawerLiftMm = 75 * clamp01((p - 0.755) / 0.04); // NAIK menempel bawah ancak (Y=520)!
+        }
+      }
+
+      // ★ TAHAP 6 (0.80 - 0.90): MAGNET OFF -> LACI TURUN -75 mm LURUS VERTIKAL MELEPAS 6 TEMPE!
+      if (p >= 0.80 && p < 0.90) {
+        flipDeg = 180;
+        drawerOutZ = 0;
+        magnetOn = false;
+        latchClosed = false;
+        payloadVis = false;
+        doneVis = true;
+        drawerLiftMm = 75 * (1 - clamp01((p - 0.81) / 0.075)); // Turun mulus 520 -> 445 mm!
+      }
+
+      // ★ TAHAP 7 (0.90 - 1.00): Laci (di posisi bawah, bebas +45 mm!) ditarik keluar -> Cetakan balik 0°!
+      if (p >= 0.90) {
+        magnetOn = false; latchClosed = false; payloadVis = false; doneVis = true;
+        drawerLiftMm = 0;
+        drawerOutZ = 340 * clamp01((p - 0.90) / 0.05);
+        flipDeg = 180 * (1 - clamp01((p - 0.95) / 0.05));
+      }
+
+      xCarriage.position.x = cx(carX);
+      zMidGroup.position.z = mm(slideForward * 0.5);
+      zSliderGroup.position.z = mm(slideForward);
+      hopperGate.position.x = cx(450 + gateOpenSlide);
+      hopperStream.visible = hopStreamVis;
+      loadCellMesh.material = lcWeighing ? matLcActive : matElec;
+
+      boxBeans.visible = boxBeanLvl > 0.03;
+      boxBeans.scale.y = Math.max(0.05, boxBeanLvl);
+      boxBeans.position.y = cy(628 + 27 * boxBeans.scale.y);
+      clamL.rotation.z = -THREE.MathUtils.degToRad(clamOpen);
+      clamR.rotation.z =  THREE.MathUtils.degToRad(clamOpen);
+      beanCurtain.visible = curtainVis;
+
+      const vibJitter = vibrating ? Math.sin(clockMs * 0.09) * mm(2.2) : 0;
+      moldPivot.position.x = vibJitter;
+      vibMotor.material = vibrating ? matVibOn : matVibOff;
+
+      pressGroup.position.y = mm(-pressMm);
+      moldPivot.rotation.x = THREE.MathUtils.degToRad(flipDeg);
+      ancakOnMold.visible = ancakVisible;
+      ancakOnMold.position.z = mm(ancakSlideZ);
+      frontLatch.visible = latchClosed;
+      payloadOnMold.visible = payloadVis;
+      finishedOnDrawer.visible = doneVis;
+
+      // ★ Terapkan pergerakan VERTIKAL Sub-Frame Lift Laci (0..+75 mm) + HORIZONTAL Laci (0..340 mm)!
+      drawerLiftGroup.position.y = mm(drawerLiftMm);
+      drawerGroup.position.z = mm(drawerOutZ);
+      drawerMidRails.position.z = mm(drawerOutZ * 0.5);
+
+      magL.material = magnetOn ? matMagOn : matMagOff;
+      magR.material = magnetOn ? matMagOn : matMagOff;
+    }
+
+    btnPlay.classList.add('active');
+    btnPlay.addEventListener('click', () => {
+      playing = !playing;
+      btnPlay.classList.toggle('active', playing);
+      btnPlay.textContent = playing ? '⏸ Jeda Animasi 7 Tahap' : '▶ Putar Animasi 7 Tahap';
+    });
+
+    slTime.addEventListener('input', () => {
+      playing = false;
+      btnPlay.classList.remove('active');
+      btnPlay.textContent = '▶ Putar Animasi 7 Tahap';
+      progress = Number(slTime.value) / 1000;
+      applyTimeline(progress, performance.now());
+    });
+
+    stageBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.dataset.step);
+        progress = STAGES[idx].t0 + (STAGES[idx].t1 - STAGES[idx].t0) * 0.72;
+        playing = false;
+        btnPlay.classList.remove('active');
+        btnPlay.textContent = '▶ Putar Animasi 7 Tahap';
+        applyTimeline(progress, performance.now());
+      });
+    });
+
+    document.querySelectorAll('[data-view]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const v = btn.dataset.view;
+        if (v === 'iso')   { controls.target.set(0, mm(640), 0);       camera.position.set(15.2, 11.5, 16.0); }
+        if (v === 'lift')  { controls.target.set(0, mm(470), mm(120)); camera.position.set(7.5, 5.8, 10.5); }
+        if (v === 'side')  { controls.target.set(0, mm(640), 0);       camera.position.set(-21, mm(660), 0); }
+        if (v === 'front') { controls.target.set(0, mm(640), 0);       camera.position.set(0, mm(640), 21.5); }
+        controls.update();
+      });
+    });
+
+    let last = performance.now();
+    function animate(now) {
+      requestAnimationFrame(animate);
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      if (playing) progress = (progress + dt / 36.0) % 1.0;
+      applyTimeline(progress, now);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    applyTimeline(0, last);
+    animate(last);
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
